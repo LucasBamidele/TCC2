@@ -17,7 +17,7 @@ GAMMA = 0.95
 MAX_FRAMES = 1000000
 alpha = 0.99
 
-EPSILON = 0.1
+EPSILON = 10.1	#change for 0.1
 MAX_LIN_SPEED = 50
 MIN_LIN_SPEED = 0
 MAX_ANG_SPEED = 6
@@ -26,7 +26,7 @@ BALL_MAX_X = 76
 BALL_MIN_X = -76
 NUMBER_OF_ACTIONS = MAX_LIN_SPEED*(MAX_ANG_SPEED -MIN_ANG_SPEED+1)
 NUMBER_OF_PLAYERS = 1
-OBSERVE_TIMES = 30#0 # BUFFER
+OBSERVE_TIMES = 1000 # BUFFER
 MAX_MEMORY_BALL = 30
 
 MIN_DELTA_NO_MOVEMENT = 0.5
@@ -50,7 +50,7 @@ def transform_to_state(robot_allies, robot_opponents, ball):
 	# state = np.array(state)
 	return state
 
-BATCH_SIZE = 30
+BATCH_SIZE = 100
 class SimController(object):
 	"""docstring for SimController"""
 	def __init__(self):
@@ -91,6 +91,7 @@ class SimController(object):
 		reward = 0
 		if(new_state[0] <= BALL_MIN_X):
 			reward = self.reward['enemy_goal']
+			self.restart = True
 		elif(new_state[0] >= BALL_MAX_X):
 			reward = self.reward['goal']
 			self.restart = True
@@ -164,7 +165,6 @@ class SimController(object):
 		self.add_player_memory(robot_allies[0])
 		if(self.times%500 == 0):
 			self.model.save_weights('mymodel_2.h5') 
-
 
 	def isTerminalState(self,reward):
 		if(reward == self.reward['goal']):
