@@ -64,6 +64,7 @@ class Field(PygameFramework):
             self.robots_opponents = [Robot(self.world, not team_color, 'left', 
                                  position=(-self.init_x_position[x], x) 
                                  ) for x in range(self.num_opponents)]
+        self.robots_allies[0].body.angle = 0
 
         super(Field, self).run()
         

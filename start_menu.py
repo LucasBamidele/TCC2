@@ -84,8 +84,8 @@ if(window):
     logo = pygame.image.load('images/UnBall.png')
     #pygame.display.set_icon(logo)
 
-    surface = pygame.display.set_mode(WINDOW_SIZE)
     pygame.display.set_caption('UnBall - Python Simulation')
+surface = pygame.display.set_mode(WINDOW_SIZE)
 
 clock = pygame.time.Clock()
 dt = 1 / FPS

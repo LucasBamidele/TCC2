@@ -101,6 +101,7 @@ class SimController(object):
 			reward = self.reward['goal']
 			self.restart = True
 			print('goall!!!!')
+			sleep(5)
 
 		elif(self.isPlayerStuck()):
 			reward = -50
@@ -223,6 +224,7 @@ class SimController(object):
 		self.action_number = action
 		self.action = self.action_space[action]
 		(a,b) = self.action
+		a,b = 0,30
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		return (allies+enemies)
