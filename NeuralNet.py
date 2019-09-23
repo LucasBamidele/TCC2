@@ -73,7 +73,7 @@ def neural_net_model(num_players):
 
 
 
-	myn = 50*13
+	myn = 11*13
 	model.add(Dense(myn))
 	#model.add(Activation('softmax'))
 	

@@ -31,7 +31,7 @@ MIN_ANG_SPEED = -6
 ANG_STEP = 1
 BALL_MAX_X = 76
 BALL_MIN_X = -76
-NUMBER_OF_ACTIONS = ((MAX_LIN_SPEED - MIN_LIN_SPEED + LIN_STEP)/LIN_STEP)*((MAX_ANG_SPEED -MIN_ANG_SPEED+ANG_STEP)/ANG_STEP)
+NUMBER_OF_ACTIONS = ((MAX_LIN_SPEED - MIN_LIN_SPEED + LIN_STEP)//LIN_STEP)*((MAX_ANG_SPEED -MIN_ANG_SPEED+ANG_STEP)//ANG_STEP)
 NUMBER_OF_PLAYERS = 1
 OBSERVE_TIMES = 1000 # BUFFER
 MAX_MEMORY_BALL = 30
@@ -200,8 +200,12 @@ class SimController(object):
 			else :
 				update = reward
 					# new_qval = (1 - ALPHA)*old_qval + ALPHA*reward
+			print('aquausdads\n\n')
 			y = np.zeros((1, NUMBER_OF_ACTIONS))
+			print(y.shape)
+			print(old_qval.shape)
 			y[:] = old_qval[:]
+			print('aquausdads22\n\n')
 			y[0][action_number]=update
 			x_train.append(old_state.reshape((2 + 3*NUMBER_OF_PLAYERS),))
 			y_train.append(y.reshape(NUMBER_OF_ACTIONS,))
