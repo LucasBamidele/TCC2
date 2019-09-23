@@ -10,18 +10,21 @@
 import sys
 import math
 from constants import *
-from communication_ros import *
+# from communication_ros import *
 from objects_on_field.objects import *
 from pygame_framework.framework import *
+import sim_controller as sc
+import random
 
 
-class Field(PygameFramework, RunRos):
+class Field(PygameFramework):
     name = "Python simulator"
     description = "Robots controled by ros"
 
     def __init__(self, num_allies, num_opponents, team_color, field_side, publish_topic):
         PygameFramework.__init__(self)
-        RunRos.__init__(self, publish_topic)
+        self.controller = sc.SimController()
+        #RunRos.__init__(self, publish_topic)
         # Top-down -- no gravity in the screen plane
         self.world.gravity = (0, 0)
 
@@ -70,6 +73,22 @@ class Field(PygameFramework, RunRos):
     def KeyboardUp(self, key):
         super(Field, self).KeyboardUp(key)
 
+    def update_speeds(self):
+        self.ang_and_lin_speed = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
+
+    def compute_learning(self):
+        self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
+
+    def restart(self):
+        random_x = random.randint(-65,5)
+        random_y = random.randint(-50,50)
+        angle = random.random()*2*math.pi
+        self.robots_allies[0].body.position = (random_x,random_y)
+        self.robots_allies[0].body.angle = angle #math.pi/2
+
+        self.ball.position = (0,0)
+
+
     def update_phisics(self, settings):
         if not self.pause:
             for x in range(self.num_allies):
@@ -106,12 +125,18 @@ class Field(PygameFramework, RunRos):
         		angle = -(2*math.pi - angle)
         	robots_opponents.append((self.robots_opponents[opponent].body.position, angle))
 
-        RunRos.update(self, robots_allies, robots_opponents, self.ball.body.position)
+        #RunRos.update(self, robots_allies, robots_opponents, self.ball.body.position)
         #print("angular_simulator>>>", self.robots_allies[0].body.angularVelocity)
 
     def Step(self, settings):
+        print(self.robots_allies[0].body.position)
+        self.update_speeds()
         self.update_phisics(settings)
+        self.compute_learning()
 
+        if(self.controller.restart):
+            self.controller.restart = False
+            self.restart()
         super(Field, self).Step(settings)
 
         for x in range(self.num_allies):
@@ -119,4 +144,4 @@ class Field(PygameFramework, RunRos):
         for x in range(self.num_opponents):
             self.robots_opponents[x].update_colors()
         # p = ((0.2,0.8,1.2, 1.6), (0.2,0.8,1.2, 1.6))
-        self.trajectory.update(self.trajectory_x, self.trajectory_y)
+        #self.trajectory.update(self.trajectory_x, self.trajectory_y)

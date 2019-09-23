@@ -37,7 +37,7 @@ import sys
 import warnings
 from constants import *
 from Box2D import (b2Color, b2PolygonShape)
-import rospy
+# import rospy
 
 try:
     import pygame_sdl2
@@ -328,7 +328,8 @@ class PygameFramework(FrameworkBase):
         running = True
         clock = pygame.time.Clock()
         try:
-            while running and not rospy.is_shutdown():
+            #while running and not rospy.is_shutdown():
+            while running:
                 running = self.checkEvents()
                 self.screen.fill((0, 0, 0))
 
@@ -341,7 +342,7 @@ class PygameFramework(FrameworkBase):
 
                 pygame.display.flip()
                 clock.tick(self.settings.hz)
-                self.fps = clock.get_fps()
+                #self.fps = clock.get_fps()
                 
         except Exception as inst:
             print(inst)
