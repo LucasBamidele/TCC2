@@ -14,7 +14,7 @@ from keras.utils import to_categorical
 from collections import deque
 from time import sleep
 
-GOAL_REWARD = 500
+GOAL_REWARD = 5000
 PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
@@ -25,11 +25,13 @@ alpha = 0.99
 EPSILON = 10.1	#change for 0.1
 MAX_LIN_SPEED = 50
 MIN_LIN_SPEED = 0
+LIN_STEP = 5
 MAX_ANG_SPEED = 6
 MIN_ANG_SPEED = -6
+ANG_STEP = 1
 BALL_MAX_X = 76
 BALL_MIN_X = -76
-NUMBER_OF_ACTIONS = MAX_LIN_SPEED*(MAX_ANG_SPEED -MIN_ANG_SPEED+1)
+NUMBER_OF_ACTIONS = ((MAX_LIN_SPEED - MIN_LIN_SPEED + LIN_STEP)/LIN_STEP)*((MAX_ANG_SPEED -MIN_ANG_SPEED+ANG_STEP)/ANG_STEP)
 NUMBER_OF_PLAYERS = 1
 OBSERVE_TIMES = 1000 # BUFFER
 MAX_MEMORY_BALL = 30
@@ -66,8 +68,8 @@ class SimController(object):
 		self.old_state = None
 		self.action_space = []
 		self.action_number = None
-		for angle in range(MIN_ANG_SPEED, MAX_ANG_SPEED+1):
-			for linear in range(MAX_LIN_SPEED+1):
+		for angle in range(MIN_ANG_SPEED, MAX_ANG_SPEED+ ANG_STEP, ANG_STEP):
+			for linear in range(MIN_LIN_SPEED, MAX_LIN_SPEED +LIN_STEP, LIN_STEP):
 				self.action_space.append((angle, linear))
 		self.action = None
 		self.model = nn.neural_net_model(1)
@@ -224,7 +226,6 @@ class SimController(object):
 		self.action_number = action
 		self.action = self.action_space[action]
 		(a,b) = self.action
-		a,b = 0,30
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		return (allies+enemies)

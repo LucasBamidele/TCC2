@@ -37,7 +37,7 @@ def cnn_model(num_players):
 	model.add(Dropout(0.5))
 
 
-	myn = 50*13
+	myn = 11*13
 	model.add(Dense(myn))
 	model.add(Activation('softmax'))
 
