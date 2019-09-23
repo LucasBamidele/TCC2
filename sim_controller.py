@@ -1,7 +1,12 @@
-
-# from communication_ros import *
-# from communication.msg import robots_speeds_msg
-# from vision.msg import VisionMessage
+"""
+TODO:
+	Create temporal series for states (define size)
+		maybe try to predict, need to work this better
+	expand to 3 vs 3 players (invert input before)
+	try centralized approach first
+	work on a better model for cnn and basic ann
+	
+"""
 import numpy as np
 import NeuralNet as nn
 import random
