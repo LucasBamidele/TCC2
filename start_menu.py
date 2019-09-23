@@ -31,6 +31,14 @@ from pygame.locals import *
 from random import randrange
 from field import *
 import os
+import sys
+window = True
+if(len(sys.argv) > 1):
+    if(sys.argv[1]=='no_window'):
+        window = False
+if(not window):
+    os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
 import pygame
 from constants import *
 
@@ -67,16 +75,17 @@ WINDOW_SIZE = (int(FIELD_H*ZOOM), int(FIELD_W*ZOOM))
 # -----------------------------------------------------------------------------
 # Init pygame
 pygame.init()
-os.environ['SDL_VIDEO_CENTERED'] = '1'
+if(window):
+    os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-# Create pygame screen and objects
-directory = os.getcwd()
-#logo = pygame.image.load(directory + '/src/python_simulator/images/UnBall.png') 
-logo = pygame.image.load('images/UnBall.png')
-#pygame.display.set_icon(logo)
+    # Create pygame screen and objects
+    directory = os.getcwd()
+    #logo = pygame.image.load(directory + '/src/python_simulator/images/UnBall.png') 
+    logo = pygame.image.load('images/UnBall.png')
+    #pygame.display.set_icon(logo)
 
-surface = pygame.display.set_mode(WINDOW_SIZE)
-pygame.display.set_caption('UnBall - Python Simulation')
+    surface = pygame.display.set_mode(WINDOW_SIZE)
+    pygame.display.set_caption('UnBall - Python Simulation')
 
 clock = pygame.time.Clock()
 dt = 1 / FPS

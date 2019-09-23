@@ -38,6 +38,10 @@ import warnings
 from constants import *
 from Box2D import (b2Color, b2PolygonShape)
 # import rospy
+window = True
+if(len(sys.argv) > 1):
+    if(sys.argv[1] == 'no_window'):
+        window = False
 
 try:
     import pygame_sdl2
@@ -99,14 +103,15 @@ class PygameDraw(b2DrawExtended):
                   (aabb.upperBound.x, aabb.lowerBound.y),
                   (aabb.upperBound.x, aabb.upperBound.y),
                   (aabb.lowerBound.x, aabb.upperBound.y)]
-
-        pygame.draw.aalines(self.surface, color, True, points)
+        if(window):
+            pygame.draw.aalines(self.surface, color, True, points)
 
     def DrawSegment(self, p1, p2, color):
         """
         Draw the line segment from p1-p2 with the specified color.
         """
-        pygame.draw.aaline(self.surface, color.bytes, p1, p2)
+        if(window):
+            pygame.draw.aaline(self.surface, color.bytes, p1, p2)
 
     def DrawTransform(self, xf):
         """
@@ -116,8 +121,9 @@ class PygameDraw(b2DrawExtended):
         p2 = self.to_screen(p1 + self.axisScale * xf.R.x_axis)
         p3 = self.to_screen(p1 + self.axisScale * xf.R.y_axis)
         p1 = self.to_screen(p1)
-        pygame.draw.aaline(self.surface, (255, 0, 0), p1, p2)
-        pygame.draw.aaline(self.surface, (0, 255, 0), p1, p3)
+        if(window):
+            pygame.draw.aaline(self.surface, (255, 0, 0), p1, p2)
+            pygame.draw.aaline(self.surface, (0, 255, 0), p1, p3)
 
     def DrawCircle(self, center, radius, color, drawwidth=1):
         """
@@ -129,8 +135,8 @@ class PygameDraw(b2DrawExtended):
             radius = 1
         else:
             radius = int(radius)
-
-        pygame.draw.circle(self.surface, color.bytes,
+        if(window):
+            pygame.draw.circle(self.surface, color.bytes,
                            center, radius, drawwidth)
 
     def DrawSolidCircle(self, center, radius, axis, color, color_line=(255, 0, 0)):
@@ -143,13 +149,13 @@ class PygameDraw(b2DrawExtended):
             radius = 1
         else:
             radius = int(radius)
-
-        pygame.draw.circle(self.surface, (color / 2).bytes + [127],
-                           center, radius, 0)
-        pygame.draw.circle(self.surface, color.bytes, center, radius, 1)
-        pygame.draw.aaline(self.surface, color_line, center,
-                           (center[0] - radius * axis[0],
-                            center[1] + radius * axis[1]))
+        if(window):
+            pygame.draw.circle(self.surface, (color / 2).bytes + [127],
+                               center, radius, 0)
+            pygame.draw.circle(self.surface, color.bytes, center, radius, 1)
+            pygame.draw.aaline(self.surface, color_line, center,
+                               (center[0] - radius * axis[0],
+                                center[1] + radius * axis[1]))
 
     def DrawPolygon(self, vertices, color):
         """
@@ -157,12 +163,12 @@ class PygameDraw(b2DrawExtended):
         """
         if not vertices:
             return
-
-        if len(vertices) == 2:
-            pygame.draw.aaline(self.surface, color.bytes,
-                               vertices[0], vertices)
-        else:
-            pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
+        if(window):
+            if len(vertices) == 2:
+                pygame.draw.aaline(self.surface, color.bytes,
+                                   vertices[0], vertices)
+            else:
+                pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
 
     def DrawSolidPolygon(self, vertices, color, body=''):
         """
@@ -172,14 +178,14 @@ class PygameDraw(b2DrawExtended):
             pass
         if not vertices:
             return
-
-        if len(vertices) == 2:
-            pygame.draw.aaline(self.surface, color.bytes,
-                               vertices[0], vertices[1])
-        else:
-            pygame.draw.polygon(
-                self.surface, (color / 2).bytes + [127], vertices, 0)
-            pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
+        if(window):
+            if len(vertices) == 2:
+                pygame.draw.aaline(self.surface, color.bytes,
+                                   vertices[0], vertices[1])
+            else:
+                pygame.draw.polygon(
+                    self.surface, (color / 2).bytes + [127], vertices, 0)
+                pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
 
     # the to_screen conversions are done in C with b2DrawExtended, leading to
     # an increase in fps.

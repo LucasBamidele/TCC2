@@ -1,0 +1,8 @@
+headless notes: 
+	pygame_framework:
+		comment pygame.draw.aaline
+	start_menu
+		add: os.environ['SDL_VIDEODRIVER'] = 'dummy'
+
+
+right now: run script with no_window
