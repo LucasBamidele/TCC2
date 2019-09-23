@@ -86,7 +86,8 @@ class Field(PygameFramework):
         self.robots_allies[0].body.position = (random_x,random_y)
         self.robots_allies[0].body.angle = angle #math.pi/2
 
-        self.ball.position = (0,0)
+        self.ball.body.position = (0,0)
+        self.ball.body.linearVelocity = (0,0)
 
 
     def update_phisics(self, settings):
@@ -129,7 +130,6 @@ class Field(PygameFramework):
         #print("angular_simulator>>>", self.robots_allies[0].body.angularVelocity)
 
     def Step(self, settings):
-        print(self.robots_allies[0].body.position)
         self.update_speeds()
         self.update_phisics(settings)
         self.compute_learning()

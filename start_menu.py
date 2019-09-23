@@ -73,7 +73,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 directory = os.getcwd()
 #logo = pygame.image.load(directory + '/src/python_simulator/images/UnBall.png') 
 logo = pygame.image.load('images/UnBall.png')
-pygame.display.set_icon(logo)
+#pygame.display.set_icon(logo)
 
 surface = pygame.display.set_mode(WINDOW_SIZE)
 pygame.display.set_caption('UnBall - Python Simulation')
@@ -82,7 +82,7 @@ clock = pygame.time.Clock()
 dt = 1 / FPS
 
 # Global variables
-num_allies = 0
+num_allies = 1
 num_opponents = 0
 team_color = 0  # blue   = 0
                 # yellow = 1
@@ -288,7 +288,9 @@ def start_menu():
                 exit()
 
         # Main menu
-        main_menu.mainloop(events)
+        #main_menu.mainloop(events)
+
+        Field(num_allies, num_opponents, team_color, field_side, publish_topic)
 
         # Flip surface
-        pygame.display.flip()
+        #pygame.display.flip()

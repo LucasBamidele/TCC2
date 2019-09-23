@@ -212,6 +212,7 @@ class SimController(object):
 
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		state = transform_to_state(ally_positions, enemy_positions, ball)
+		print(state)
 		self.old_state = state
 		if(random.random() < EPSILON or self.times < OBSERVE_TIMES):
 			action = (random.randint(0,NUMBER_OF_ACTIONS-1))
