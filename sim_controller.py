@@ -200,12 +200,10 @@ class SimController(object):
 			else :
 				update = reward
 					# new_qval = (1 - ALPHA)*old_qval + ALPHA*reward
-			print('aquausdads\n\n')
 			y = np.zeros((1, NUMBER_OF_ACTIONS))
 			print(y.shape)
 			print(old_qval.shape)
 			y[:] = old_qval[:]
-			print('aquausdads22\n\n')
 			y[0][action_number]=update
 			x_train.append(old_state.reshape((2 + 3*NUMBER_OF_PLAYERS),))
 			y_train.append(y.reshape(NUMBER_OF_ACTIONS,))
