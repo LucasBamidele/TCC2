@@ -103,7 +103,6 @@ class SimController(object):
 			reward = self.reward['goal']
 			self.restart = True
 			print('goall!!!!')
-			sleep(5)
 
 		elif(self.isPlayerStuck()):
 			reward = -50
@@ -201,8 +200,6 @@ class SimController(object):
 				update = reward
 					# new_qval = (1 - ALPHA)*old_qval + ALPHA*reward
 			y = np.zeros((1, NUMBER_OF_ACTIONS))
-			print(y.shape)
-			print(old_qval.shape)
 			y[:] = old_qval[:]
 			y[0][action_number]=update
 			x_train.append(old_state.reshape((2 + 3*NUMBER_OF_PLAYERS),))
