@@ -42,27 +42,29 @@ if(not window):
 import pygame
 from constants import *
 
+pymenu = False
 # Import pygameMenu
-import pygameMenu
-from pygameMenu.locals import *
+if(pymenu):
+    import pygameMenu
+    from pygameMenu.locals import *
 
-ABOUT = ['Python Simulation',
-         TEXT_NEWLINE,
-         'Property: UnBall ',
-         'Email: equipe.unball@gmail.com',
-         TEXT_NEWLINE,
-         'Developer: Hiago dos Santos Rabelo',
-         'Email: hiagop22@gmail.com'
-         ]
-HELP = ['>>MENU',
-        'Press UP/DOWN to navigate on menu',
-        'Press LEFT/RIGHT to change the option',
-        'Press ENTER to enter in a topic',
-        TEXT_NEWLINE,
-        '>>SIMULATION:',
-        'Press SPACE to Pause/Play into Simulation',
-        'Press ESC to return to main menu',
-        'Click on a object and keep pressed to move it']
+    ABOUT = ['Python Simulation',
+             TEXT_NEWLINE,
+             'Property: UnBall ',
+             'Email: equipe.unball@gmail.com',
+             TEXT_NEWLINE,
+             'Developer: Hiago dos Santos Rabelo',
+             'Email: hiagop22@gmail.com'
+             ]
+    HELP = ['>>MENU',
+            'Press UP/DOWN to navigate on menu',
+            'Press LEFT/RIGHT to change the option',
+            'Press ENTER to enter in a topic',
+            TEXT_NEWLINE,
+            '>>SIMULATION:',
+            'Press SPACE to Pause/Play into Simulation',
+            'Press ESC to return to main menu',
+            'Click on a object and keep pressed to move it']
 
 
 COLOR_BACKGROUND = (3, 63, 118) 
@@ -145,142 +147,143 @@ def main_background():
 
 # -----------------------------------------------------------------------------
 # RUN SIMULATION MENU
-# run_simulation = pygameMenu.Menu(surface,
-#                             bgfun=main_background,
-#                             color_selected=COLOR_WHITE,
-#                             font=pygameMenu.font.FONT_BEBAS,
-#                             font_color=COLOR_BLACK,
-#                             font_size=30,
-#                             menu_alpha=100,
-#                             menu_color=MENU_BACKGROUND_COLOR,
-#                             menu_height=int(WINDOW_SIZE[1] * 0.8),
-#                             menu_width=int(WINDOW_SIZE[0] * 0.8),
-#                             onclose=pygameMenu.events.DISABLE_CLOSE,
-#                             option_shadow=False,
-#                             title='Run Simulation',
-#                             window_height=WINDOW_SIZE[1],
-#                             window_width=WINDOW_SIZE[0]
-#                             )
+if(pymenu):
+    run_simulation = pygameMenu.Menu(surface,
+                                bgfun=main_background,
+                                color_selected=COLOR_WHITE,
+                                font=pygameMenu.font.FONT_BEBAS,
+                                font_color=COLOR_BLACK,
+                                font_size=30,
+                                menu_alpha=100,
+                                menu_color=MENU_BACKGROUND_COLOR,
+                                menu_height=int(WINDOW_SIZE[1] * 0.8),
+                                menu_width=int(WINDOW_SIZE[0] * 0.8),
+                                onclose=pygameMenu.events.DISABLE_CLOSE,
+                                option_shadow=False,
+                                title='Run Simulation',
+                                window_height=WINDOW_SIZE[1],
+                                window_width=WINDOW_SIZE[0]
+                                )
 
-# run_simulation.add_option('Start', play_function)
-# run_simulation.add_selector('Number allies', [('0', 0),
-#                                              ('1', 1),
-#                                              ('2', 2),
-#                                              ('3', 3),
-#                                              ('4', 4),
-#                                              ('5', 5)],
-#                         onreturn=None,
-#                         onchange=change_num_allies)
-# run_simulation.add_selector('Number opponents', [('0', 0),
-#                                              ('1', 1),
-#                                              ('2', 2),
-#                                              ('3', 3),
-#                                              ('4', 4),
-#                                              ('5', 5)],
-#                         onreturn=None,
-#                         onchange=change_num_opponents)               
-# run_simulation.add_selector('Team color', [('Blue', 0),
-#                                              ('Yellow', 1)],
-#                         onreturn=None,
-#                         onchange=change_team_color)                                          
-# run_simulation.add_selector('Field side', [('left', 'left'),
-#                                              ('right', 'right')],
-#                         onreturn=None,
-#                         onchange=change_field_side)                                          
-# run_simulation.add_option('Return to main menu', pygameMenu.events.BACK)
+    run_simulation.add_option('Start', play_function)
+    run_simulation.add_selector('Number allies', [('0', 0),
+                                                 ('1', 1),
+                                                 ('2', 2),
+                                                 ('3', 3),
+                                                 ('4', 4),
+                                                 ('5', 5)],
+                            onreturn=None,
+                            onchange=change_num_allies)
+    run_simulation.add_selector('Number opponents', [('0', 0),
+                                                 ('1', 1),
+                                                 ('2', 2),
+                                                 ('3', 3),
+                                                 ('4', 4),
+                                                 ('5', 5)],
+                            onreturn=None,
+                            onchange=change_num_opponents)               
+    run_simulation.add_selector('Team color', [('Blue', 0),
+                                                 ('Yellow', 1)],
+                            onreturn=None,
+                            onchange=change_team_color)                                          
+    run_simulation.add_selector('Field side', [('left', 'left'),
+                                                 ('right', 'right')],
+                            onreturn=None,
+                            onchange=change_field_side)                                          
+    run_simulation.add_option('Return to main menu', pygameMenu.events.BACK)
 
-# # CONFIG MENU
-# # setting = pygameMenu.Menu(surface,
-# #                             bgfun=main_background,
-# #                             color_selected=COLOR_WHITE,
-# #                             font=pygameMenu.font.FONT_BEBAS,
-# #                             font_color=COLOR_BLACK,
-# #                             font_size=30,
-# #                             menu_alpha=100,
-# #                             menu_color=MENU_BACKGROUND_COLOR,
-# #                             menu_height=int(WINDOW_SIZE[1] * 0.8),
-# #                             menu_width=int(WINDOW_SIZE[0] * 0.8),
-# #                             onclose=pygameMenu.events.DISABLE_CLOSE,
-# #                             option_shadow=False,
-# #                             title='Setting',
-# #                             window_height=WINDOW_SIZE[1],
-# #                             window_width=WINDOW_SIZE[0]
-# #                             )
-# # setting.add_selector('Publish topic', [('VisionMessage', 'vision_output_topic')],
-# #                         onreturn=None,
-# #                         onchange=change_publish_topic)
-# # setting.add_option('Return to main menu', pygameMenu.events.BACK)
+    # CONFIG MENU
+    # setting = pygameMenu.Menu(surface,
+    #                             bgfun=main_background,
+    #                             color_selected=COLOR_WHITE,
+    #                             font=pygameMenu.font.FONT_BEBAS,
+    #                             font_color=COLOR_BLACK,
+    #                             font_size=30,
+    #                             menu_alpha=100,
+    #                             menu_color=MENU_BACKGROUND_COLOR,
+    #                             menu_height=int(WINDOW_SIZE[1] * 0.8),
+    #                             menu_width=int(WINDOW_SIZE[0] * 0.8),
+    #                             onclose=pygameMenu.events.DISABLE_CLOSE,
+    #                             option_shadow=False,
+    #                             title='Setting',
+    #                             window_height=WINDOW_SIZE[1],
+    #                             window_width=WINDOW_SIZE[0]
+    #                             )
+    # setting.add_selector('Publish topic', [('VisionMessage', 'vision_output_topic')],
+    #                         onreturn=None,
+    #                         onchange=change_publish_topic)
+    # setting.add_option('Return to main menu', pygameMenu.events.BACK)
 
-# # ABOUT MENU
-# about_menu = pygameMenu.TextMenu(surface,
-#                                  bgfun=main_background,
-#                                  color_selected=COLOR_WHITE,
-#                                  font=pygameMenu.font.FONT_BEBAS,
-#                                  font_color=COLOR_BLACK,
-#                                  font_size_title=30,
-#                                  font_title=pygameMenu.font.FONT_8BIT,
-#                                  menu_color=MENU_BACKGROUND_COLOR,
-#                                  menu_color_title=COLOR_WHITE,
-#                                  menu_height=int(WINDOW_SIZE[1] * 0.6),
-#                                  menu_width=int(WINDOW_SIZE[0] * 0.6),
-#                                  onclose=pygameMenu.events.DISABLE_CLOSE,
-#                                  option_shadow=False,
-#                                  text_color=COLOR_BLACK,
-#                                  title='About',
-#                                  window_height=WINDOW_SIZE[1],
-#                                  window_width=WINDOW_SIZE[0]
-#                                  )
-# for m in ABOUT:
-#     about_menu.add_line(m)
-# about_menu.add_line(TEXT_NEWLINE)
-# about_menu.add_option('Return to menu', pygameMenu.events.BACK)
+    # ABOUT MENU
+    about_menu = pygameMenu.TextMenu(surface,
+                                     bgfun=main_background,
+                                     color_selected=COLOR_WHITE,
+                                     font=pygameMenu.font.FONT_BEBAS,
+                                     font_color=COLOR_BLACK,
+                                     font_size_title=30,
+                                     font_title=pygameMenu.font.FONT_8BIT,
+                                     menu_color=MENU_BACKGROUND_COLOR,
+                                     menu_color_title=COLOR_WHITE,
+                                     menu_height=int(WINDOW_SIZE[1] * 0.6),
+                                     menu_width=int(WINDOW_SIZE[0] * 0.6),
+                                     onclose=pygameMenu.events.DISABLE_CLOSE,
+                                     option_shadow=False,
+                                     text_color=COLOR_BLACK,
+                                     title='About',
+                                     window_height=WINDOW_SIZE[1],
+                                     window_width=WINDOW_SIZE[0]
+                                     )
+    for m in ABOUT:
+        about_menu.add_line(m)
+    about_menu.add_line(TEXT_NEWLINE)
+    about_menu.add_option('Return to menu', pygameMenu.events.BACK)
 
-# # HELP MENU
-# help_menu = pygameMenu.TextMenu(surface,
-#                                  bgfun=main_background,
-#                                  color_selected=COLOR_WHITE,
-#                                  font=pygameMenu.font.FONT_BEBAS,
-#                                  font_color=COLOR_BLACK,
-#                                  font_size_title=30,
-#                                  font_title=pygameMenu.font.FONT_8BIT,
-#                                  menu_color=MENU_BACKGROUND_COLOR,
-#                                  menu_color_title=COLOR_WHITE,
-#                                  menu_height=int(WINDOW_SIZE[1] * 0.8),
-#                                  menu_width=int(WINDOW_SIZE[0] * 0.8),
-#                                  onclose=pygameMenu.events.DISABLE_CLOSE,
-#                                  option_shadow=False,
-#                                  text_color=COLOR_BLACK,
-#                                  title='Help',
-#                                  window_height=WINDOW_SIZE[1],
-#                                  window_width=WINDOW_SIZE[0]
-#                                  )
-# for m in HELP:
-#     help_menu.add_line(m)
-# help_menu.add_line(TEXT_NEWLINE)
-# help_menu.add_option('Return to menu', pygameMenu.events.BACK)
+    # HELP MENU
+    help_menu = pygameMenu.TextMenu(surface,
+                                     bgfun=main_background,
+                                     color_selected=COLOR_WHITE,
+                                     font=pygameMenu.font.FONT_BEBAS,
+                                     font_color=COLOR_BLACK,
+                                     font_size_title=30,
+                                     font_title=pygameMenu.font.FONT_8BIT,
+                                     menu_color=MENU_BACKGROUND_COLOR,
+                                     menu_color_title=COLOR_WHITE,
+                                     menu_height=int(WINDOW_SIZE[1] * 0.8),
+                                     menu_width=int(WINDOW_SIZE[0] * 0.8),
+                                     onclose=pygameMenu.events.DISABLE_CLOSE,
+                                     option_shadow=False,
+                                     text_color=COLOR_BLACK,
+                                     title='Help',
+                                     window_height=WINDOW_SIZE[1],
+                                     window_width=WINDOW_SIZE[0]
+                                     )
+    for m in HELP:
+        help_menu.add_line(m)
+    help_menu.add_line(TEXT_NEWLINE)
+    help_menu.add_option('Return to menu', pygameMenu.events.BACK)
 
-# # MAIN MENU
-# main_menu = pygameMenu.Menu(surface,
-#                             bgfun=main_background,
-#                             color_selected=COLOR_WHITE,
-#                             font=pygameMenu.font.FONT_BEBAS,
-#                             font_color=COLOR_BLACK,
-#                             font_size=30,
-#                             menu_alpha=100,
-#                             menu_color=MENU_BACKGROUND_COLOR,
-#                             menu_height=int(WINDOW_SIZE[1] * 0.8),
-#                             menu_width=int(WINDOW_SIZE[0] * 0.8),
-#                             onclose=pygameMenu.events.DISABLE_CLOSE,
-#                             option_shadow=False,
-#                             title='Python Simulator',
-#                             window_height=WINDOW_SIZE[1],
-#                             window_width=WINDOW_SIZE[0]
-#                             )
-# main_menu.add_option('Play', run_simulation)
-# # main_menu.add_option('Setting', setting)
-# main_menu.add_option('Help', help_menu)
-# main_menu.add_option('About', about_menu)
-# main_menu.add_option('Quit', pygameMenu.events.EXIT)
+    # MAIN MENU
+    main_menu = pygameMenu.Menu(surface,
+                                bgfun=main_background,
+                                color_selected=COLOR_WHITE,
+                                font=pygameMenu.font.FONT_BEBAS,
+                                font_color=COLOR_BLACK,
+                                font_size=30,
+                                menu_alpha=100,
+                                menu_color=MENU_BACKGROUND_COLOR,
+                                menu_height=int(WINDOW_SIZE[1] * 0.8),
+                                menu_width=int(WINDOW_SIZE[0] * 0.8),
+                                onclose=pygameMenu.events.DISABLE_CLOSE,
+                                option_shadow=False,
+                                title='Python Simulator',
+                                window_height=WINDOW_SIZE[1],
+                                window_width=WINDOW_SIZE[0]
+                                )
+    main_menu.add_option('Play', run_simulation)
+    # main_menu.add_option('Setting', setting)
+    main_menu.add_option('Help', help_menu)
+    main_menu.add_option('About', about_menu)
+    main_menu.add_option('Quit', pygameMenu.events.EXIT)
 
 # -----------------------------------------------------------------------------
 # Main loop
