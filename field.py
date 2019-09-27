@@ -15,6 +15,11 @@ from objects_on_field.objects import *
 from pygame_framework.framework import *
 import sim_controller as sc
 import random
+import ContactListener as cl
+only_play = False
+if(len(sys.argv)>1):
+    if(sys.argv[1]=='play'):
+        only_play = True
 
 
 class Field(PygameFramework):
@@ -27,7 +32,7 @@ class Field(PygameFramework):
         #RunRos.__init__(self, publish_topic)
         # Top-down -- no gravity in the screen plane
         self.world.gravity = (0, 0)
-
+        self.world.contactListener = cl.myContactListener()
         # Objects on field 
         self.num_allies = num_allies
         self.num_opponents = num_opponents
@@ -133,7 +138,8 @@ class Field(PygameFramework):
     def Step(self, settings):
         self.update_speeds()
         self.update_phisics(settings)
-        self.compute_learning()
+        if(not only_play):
+            self.compute_learning()
 
         if(self.controller.restart):
             self.controller.restart = False

@@ -1,0 +1,17 @@
+coisas pra prox reuniao:
+
+	-experience replay
+		random sampling de estados
+
+
+	modos:
+	no_window
+	load
+	load_no_window
+	play
+
+
+	AWS gpu: instancia p2 com 1 gpu
+
+log: before: using speed as actions
+	now: using accelerations

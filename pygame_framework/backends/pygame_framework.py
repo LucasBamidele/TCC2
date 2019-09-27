@@ -40,7 +40,7 @@ from Box2D import (b2Color, b2PolygonShape)
 # import rospy
 window = True
 if(len(sys.argv) > 1):
-    if(sys.argv[1] == 'no_window'):
+    if(sys.argv[1] == 'no_window' or sys.argv[1]=='load_no_window'):
         window = False
 
 try:
@@ -350,7 +350,7 @@ class PygameFramework(FrameworkBase):
                 # clock.tick(self.settings.hz)
                 clock.tick(1000)
                 self.fps = clock.get_fps()
-                print(self.fps)
+                #print(self.fps)
                 
         except Exception as inst:
             print(inst)

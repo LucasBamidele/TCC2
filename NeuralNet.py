@@ -5,7 +5,7 @@ from keras.layers.recurrent import LSTM
 from keras.callbacks import Callback
 from keras.layers import Conv1D, MaxPooling1D
 
-def cnn_model(num_players):
+def cnn_model(num_players, load):
 	my_shape = ((2 + 2*num_players))
 	model = Sequential()
 
@@ -49,7 +49,7 @@ def cnn_model(num_players):
 	return model
 
 
-def neural_net_model(num_players):
+def neural_net_model(num_players, load=''):
 	model = Sequential()
 	#layer 1
 	my_shape = ((2 + 3*num_players))
@@ -59,27 +59,28 @@ def neural_net_model(num_players):
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
 
-	model.add(Dense(1024))
+	model.add(Dense(256))
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
 
-	model.add(Dense(512))
+	model.add(Dense(128))
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
 
-	model.add(Dense(512))
-	model.add(Activation('relu'))
-	model.add(Dropout(0.2))
+	# model.add(Dense(512))
+	# model.add(Activation('relu'))
+	# model.add(Dropout(0.2))
 
 
 
 	myn = 11*13
 	model.add(Dense(myn))
-	#model.add(Activation('softmax'))
+	model.add(Activation('softmax'))
 	
 
 	rms = RMSprop()
 	model.compile(loss='categorical_crossentropy', optimizer=rms)
-
+	if(load):
+		model.load_weights(load)
 
 	return model

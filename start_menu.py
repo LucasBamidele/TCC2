@@ -34,7 +34,7 @@ import os
 import sys
 window = True
 if(len(sys.argv) > 1):
-    if(sys.argv[1]=='no_window'):
+    if(sys.argv[1]=='no_window' or sys.argv[1]=='load_no_window'):
         window = False
 if(not window):
     os.environ['SDL_VIDEODRIVER'] = 'dummy'
