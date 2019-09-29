@@ -11,8 +11,12 @@ dependency=(
     "sudo pip3 install pygame"
     "sudo pip3 install box2d-py"
     "sudo pip3 install pygame-menu"
-    "sudo pip3 install tensorflow-gpu"
-    "sudo pip3 install keras"
+    # "sudo pip3 install tensorflow-gpu"
+    # "sudo pip3 install keras"
+    # "sudo apt-get install build-essential dkms"
+    # "sudo apt-get install freeglut3 freeglut3-dev libxi-dev libxmu-dev"
+    # "sudo apt-get update -y"
+    # "sudo apt-get upgrade -y linux-aws"
 #     "wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.0.130-1_amd64.deb"
 #     "sudo dpkg -i cuda-repo-ubuntu1804_10.0.130-1_amd64.deb"
 #     "sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub"
@@ -36,6 +40,8 @@ dependency=(
 # sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
 # sudo apt-get update
 # sudo apt-get -y install cuda
+
+#wget http://us.download.nvidia.com/tesla/418.87/nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
 
 )
 
