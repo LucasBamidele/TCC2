@@ -33,7 +33,7 @@ PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 GAMMA = 0.95
-MAX_FRAMES = 100000
+MAX_FRAMES = 1000000
 ALPHA = 0.8
 EPSILON = 1	#change for 0.1
 
@@ -73,7 +73,7 @@ MAX_MEMORY_BALL = 15
 BATCH_SIZE = OBSERVE_TIMES #1000
 
 
-model_name = 'mymodel_11.h5'
+model_name = 'saved_models/mymodel_11.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
@@ -178,10 +178,11 @@ class SimController(object):
 			reward = 200
 		elif(self.isSpinning()):
 			print('stuck spinning')
-			reward = -10
+			reward = -30
 			self.last_speeds = deque()
 		self.t_hits+=1
 		if(not self.isBallMoving()):
+			reward = reward - 10
 			self.ball_memory = deque()
 		#evaluate the reward from the game state!
 		return reward
@@ -310,7 +311,7 @@ class SimController(object):
 		else :
 			predicted_qval = self.model.predict(state.transpose(), batch_size=1) #checar batch size!!
 			#predicted_qval = self.model.predict(np.expand_dims(state.transpose(),axis=2), batch_size=1) #checar batch size!!
-			print(predicted_qval)
+			#print(predicted_qval)
 			action = np.argmax(predicted_qval)
 		#print(action)
 		self.action_number = action
