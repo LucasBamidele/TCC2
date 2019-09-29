@@ -246,7 +246,7 @@ class SimController(object):
 		self.add_player_memory(robot_allies[0])
 		if(self.times%1500 == 0):
 			self.model.save_weights(model_name) 
-		if(self.times > MAX_FRAMES*2):
+		if(self.times > MAX_FRAMES*5):
 			self.model.save_weights(model_name)
 			exit()
 
@@ -303,7 +303,7 @@ class SimController(object):
 		state = transform_to_state(ally_positions, enemy_positions, ball)
 		self.old_state = state
 		#print('state',state.transpose())
-		dec = max(EPSILON - self.decrease, 0.05)
+		dec = max(EPSILON - self.decrease, 0.15)
 		print('EPSILON', dec)
 		if((random.random() < dec or self.times < OBSERVE_TIMES) and not only_play):
 			action = (random.randint(0,NUMBER_OF_ACTIONS-1))

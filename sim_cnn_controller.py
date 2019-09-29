@@ -41,7 +41,7 @@ PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 GAMMA = 0.95
-MAX_FRAMES = 80000
+MAX_FRAMES = 1000000
 ALPHA = 0.8
 EPSILON = 1	#change for 0.1
 
@@ -79,7 +79,7 @@ MAX_MEMORY_BALL = 15
 BATCH_SIZE = 10#150 #1000
 
 
-model_name = 'mymodel_10.h5'
+model_name = 'saved_models/mymodel_10.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 #transform an input of robot_allies, robot_opponents, and ball to a valid array
 def transform_to_state(robot_allies, robot_opponents, ball):
