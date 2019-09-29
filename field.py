@@ -14,8 +14,11 @@ from constants import *
 from objects_on_field.objects import *
 from pygame_framework.framework import *
 import sim_controller as sc
+#import sim_cnn_controller as sc
 import random
 import ContactListener as cl
+
+BALL_MAX_X = 76
 only_play = False
 if(len(sys.argv)>1):
     if(sys.argv[1]=='play'):
@@ -36,7 +39,7 @@ class Field(PygameFramework):
         # Objects on field 
         self.num_allies = num_allies
         self.num_opponents = num_opponents
-
+        self.times_since_restart = 0
         self.ground = Ground(self.world)
         walls = Walls(self.world, BLUE)
         self.ball = Ball(self.world, BLUE)
@@ -140,8 +143,14 @@ class Field(PygameFramework):
         self.update_phisics(settings)
         if(not only_play):
             self.compute_learning()
-
+        if(only_play and self.ball.body.position[0] >= BALL_MAX_X):
+            self.controller.restart = True
+            print('goall!!!!')
+        self.times_since_restart +=1
+        if(self.times_since_restart%2000 and not only_play):
+            self.controller.restart
         if(self.controller.restart):
+            self.times_since_restart = 0
             self.controller.restart = False
             self.restart()
         super(Field, self).Step(settings)
