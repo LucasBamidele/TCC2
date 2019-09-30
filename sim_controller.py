@@ -34,7 +34,7 @@ RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 GAMMA = 0.95
 MAX_FRAMES = 500000
-ALPHA = 0.8
+ALPHA = 0.6
 EPSILON = 1	#change for 0.1
 
 
@@ -73,7 +73,9 @@ MAX_MEMORY_BALL = 15
 BATCH_SIZE = OBSERVE_TIMES #1000
 
 
-model_name = 'saved_models/mymodel_v13.h5'
+MAX_DIST = 152
+
+model_name = 'saved_models/mymodel_v15.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
@@ -81,21 +83,24 @@ def distance_between_bodies(body1, body2):
 def distance_between_ball_and_goal(body1):
 	return math.sqrt((body1.position[0] - 0)**2  + (body1.position[1] - 76)**2)
 #transform an input of robot_allies, robot_opponents, and ball to a valid array
+
+def scale(number, max_s):
+	return round(1*number/max_s, 4)
 def transform_to_state(robot_allies, robot_opponents, ball):
 	state = []
-	state.append(ball.body.position[0])
-	state.append(ball.body.position[1])
-	state.append(ball.body.linearVelocity[0])
-	state.append(ball.body.linearVelocity[1])
-	state.append(distance_between_ball_and_goal(ball.body))
+	state.append(scale(ball.body.position[0], 76))
+	state.append(scale(ball.body.position[1], 60))
+	state.append(scale(ball.body.linearVelocity[0], 50))
+	state.append(scale(ball.body.linearVelocity[1], 50))
+	state.append(scale(distance_between_ball_and_goal(ball.body),152))
 	for a in range(NUMBER_OF_PLAYERS):
-		state.append(robot_allies[a].body.position[0])
-		state.append(robot_allies[a].body.position[1])
-		state.append(robot_allies[a].body.angle)
-		state.append(robot_allies[a].body.linearVelocity[0])
-		state.append(robot_allies[a].body.linearVelocity[1])
-		state.append(robot_allies[a].body.angularVelocity)
-		state.append(distance_between_bodies(robot_allies[a].body, ball.body))
+		state.append(scale(robot_allies[a].body.position[0],76))
+		state.append(scale(robot_allies[a].body.position[1],60))
+		state.append(scale(robot_allies[a].body.angle,2*math.pi))
+		state.append(scale(robot_allies[a].body.linearVelocity[0],50))
+		state.append(scale(robot_allies[a].body.linearVelocity[1],50))
+		state.append(scale(robot_allies[a].body.angularVelocity, 6))
+		state.append(scale(distance_between_bodies(robot_allies[a].body, ball.body), 152))
 
 	state = np.array(state)
 	state = state.reshape(NUM_FEATURES,1)
@@ -129,9 +134,9 @@ class SimController(object):
 
 		self.action = None
 		if(only_play or load_model):
-			self.model = nn.neural_net_model(NUMBER_OF_PLAYERS, model_name)
+			self.model = nn.neural_net_model2(NUMBER_OF_PLAYERS, model_name)
 		else :
-			self.model = nn.neural_net_model(NUMBER_OF_PLAYERS)
+			self.model = nn.neural_net_model2(NUMBER_OF_PLAYERS)
 		self.reward = {
 			'goal': GOAL_REWARD,
 			'pass': PASS_REWARD,
@@ -231,7 +236,7 @@ class SimController(object):
 
 
 	def compute(self, robot_allies, robot_opponents, ball):
-		if(self.times%4 != 0):
+		if(self.times%3 != 0):
 			self.times+=1
 			return
 		new_state = transform_to_state(robot_allies, robot_opponents, ball)
@@ -259,9 +264,7 @@ class SimController(object):
 			exit()
 
 	def isTerminalState(self,reward):
-		if(reward == self.reward['goal']):
-			return True
-		if(self.restart):
+		if(reward == -500 or reward == -100 or reward == self.reward['goal'] or reward == self.reward['enemy_goal']):
 			return True
 		return False
 
@@ -277,9 +280,16 @@ class SimController(object):
 			# old_qval = self.model.predict(np.expand_dims(old_state.transpose(),axis=2))
 			# new_qval = self.model.predict(np.expand_dims(new_state.transpose(),axis=2))
 			max_qval = np.max(new_qval)	#maybe reevaluate
-
-			y = [((1 - ALPHA)*old_qval_i + ALPHA*(reward + GAMMA*max_qval)) for old_qval_i in old_qval]
+			#print('max',max_qval)
+			y = []
+			for old_qval_i in old_qval[0]:
+				if(self.isTerminalState(reward)):
+					y.append((reward))
+				else :
+					y.append((1 - ALPHA)*old_qval_i + ALPHA*(reward + GAMMA*max_qval))
+			# y = [((1 - ALPHA)*old_qval_i + ALPHA*(reward + GAMMA*max_qval)) for old_qval_i in old_qval]
 			y = np.array(y)
+			#print(y)
 			# if(not self.isTerminalState(reward)):
 			# 	update = reward + GAMMA*max_qval
 			# 	# new_qval = (1 - ALPHA)*old_qval + ALPHA*(reward + GAMMA*max_qval)
@@ -304,23 +314,20 @@ class SimController(object):
 		return [angle_v, lin_v]
 
 
-	def learn_playing_descentrallized(self):
-		pass
-
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		if(self.times%4!=0):
 			return
 		state = transform_to_state(ally_positions, enemy_positions, ball)
 		self.old_state = state
-		#print('state',state.transpose())
-		dec = max(EPSILON - self.decrease, 0.1)
+		print('state',state.transpose())
+		dec = max(EPSILON - self.decrease, 0.01)
 		print('EPSILON', dec)
 		if((random.random() < dec or self.times < OBSERVE_TIMES) and not only_play):
 			action = (random.randint(0,NUMBER_OF_ACTIONS-1))
 		else :
 			predicted_qval = self.model.predict(state.transpose(), batch_size=1) #checar batch size!!
 			#predicted_qval = self.model.predict(np.expand_dims(state.transpose(),axis=2), batch_size=1) #checar batch size!!
-			#print(predicted_qval)
+			print('pred val', predicted_qval)
 			action = np.argmax(predicted_qval)
 		#print(action)
 		self.action_number = action
@@ -331,20 +338,13 @@ class SimController(object):
 		self.add_speed_memory(self.speed)
 		(a,b) = self.speed
 		# print(self.isSpinning())
-		# print(self.speed)
+		print(self.speed)
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		self.decrease = self.times/MAX_FRAMES#7000000
 		print('Number of times: ', self.times)
 		return (allies+enemies)
 
-	def sync_update():
-		pass
-
-			
-	def assync_update():
-		self.pub = rospy.Publisher('robots_speeds', robots_speeds_msg, queue_size=2)
-		self.sub = rospy.Subscriber('robots_speeds', robots_speeds_msg, self.callback)
 
 def main():
 	sc = SimController()
