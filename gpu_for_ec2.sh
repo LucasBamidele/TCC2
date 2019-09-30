@@ -30,3 +30,8 @@ sudo apt-get install cuda-drivers
 sudo reboot
 
 nvidia-smi -q | head
+
+git clone https://github.com/LucasBamidele/TCC2.git
+
+from tensorflow.python.client import device_lib
+print(device_lib.list_local_devices())

@@ -149,7 +149,7 @@ class Field(PygameFramework):
             self.controller.restart = True
             print('goall!!!!')
         if(self.controller.restart):
-            self.controller.times_since_restart = 0
+            self.controller.times_since_restart = 1
             self.controller.restart = False
             self.restart()
         super(Field, self).Step(settings)
