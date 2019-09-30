@@ -33,7 +33,7 @@ PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 GAMMA = 0.95
-MAX_FRAMES = 100000
+MAX_FRAMES = 500000
 ALPHA = 0.8
 EPSILON = 1	#change for 0.1
 
@@ -231,9 +231,9 @@ class SimController(object):
 
 
 	def compute(self, robot_allies, robot_opponents, ball):
-		# if(self.times%4 == 0):
-		# 	self.times+=1
-		# 	return
+		if(self.times%4 != 0):
+			self.times+=1
+			return
 		new_state = transform_to_state(robot_allies, robot_opponents, ball)
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
 		if(len(self.replay_memory) < OBSERVE_TIMES-1 and (not self.restart)):
@@ -308,8 +308,8 @@ class SimController(object):
 		pass
 
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
-		# if(self.times%4==0):
-		# 	return
+		if(self.times%4!=0):
+			return
 		state = transform_to_state(ally_positions, enemy_positions, ball)
 		self.old_state = state
 		#print('state',state.transpose())
