@@ -33,7 +33,7 @@ PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 GAMMA = 0.95
-MAX_FRAMES = 1000000
+MAX_FRAMES = 30000
 ALPHA = 0.8
 EPSILON = 1	#change for 0.1
 
@@ -64,16 +64,16 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 
 
 
+MAX_FRAMES_GAME = 2000
 
-
-OBSERVE_TIMES = 30 # BUFFER
+OBSERVE_TIMES = 60 # BUFFER
 MAX_MEMORY_BALL = 15
 
 
 BATCH_SIZE = OBSERVE_TIMES #1000
 
 
-model_name = 'saved_models/mymodel_11.h5'
+model_name = 'saved_models/mymodel_v13.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
@@ -118,6 +118,7 @@ class SimController(object):
 		self.old_state = None
 		self.action_space = []
 		self.action_number = None
+		self.times_since_restart = 0
 		# for angle in range(MIN_ANG_SPEED, MAX_ANG_SPEED+ ANG_STEP, ANG_STEP):
 		# 	for linear in range(MIN_LIN_SPEED, MAX_LIN_SPEED +LIN_STEP, LIN_STEP):
 		# 		self.action_space.append((angle, linear))
@@ -176,6 +177,9 @@ class SimController(object):
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
 			self.t_hits = 0
 			reward = 200
+		elif(self.times_since_restart%MAX_FRAMES_GAME == 0 and ball_x < BALL_MAX_X):
+			self.restart = True
+			reward = -500
 		elif(self.isSpinning()):
 			print('stuck spinning')
 			reward = -30
@@ -227,6 +231,9 @@ class SimController(object):
 
 
 	def compute(self, robot_allies, robot_opponents, ball):
+		if(self.times%4 == 0):
+			self.times+=1
+			return
 		new_state = transform_to_state(robot_allies, robot_opponents, ball)
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
 		if(len(self.replay_memory) < OBSERVE_TIMES-1 and (not self.restart)):
@@ -245,7 +252,7 @@ class SimController(object):
 		self.times+=1
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
-		if(self.times%1500 == 0):
+		if(self.times%3000 == 0):
 			self.model.save_weights(model_name) 
 		if(self.times > MAX_FRAMES*5):
 			self.model.save_weights(model_name)
@@ -301,6 +308,8 @@ class SimController(object):
 		pass
 
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
+		if(self.times%4==0):
+			return
 		state = transform_to_state(ally_positions, enemy_positions, ball)
 		self.old_state = state
 		#print('state',state.transpose())

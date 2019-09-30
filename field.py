@@ -32,6 +32,7 @@ class Field(PygameFramework):
     def __init__(self, num_allies, num_opponents, team_color, field_side, publish_topic):
         PygameFramework.__init__(self)
         self.controller = sc.SimController()
+        self.ang_and_lin_speed = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
         #RunRos.__init__(self, publish_topic)
         # Top-down -- no gravity in the screen plane
         self.world.gravity = (0, 0)
@@ -39,7 +40,6 @@ class Field(PygameFramework):
         # Objects on field 
         self.num_allies = num_allies
         self.num_opponents = num_opponents
-        self.times_since_restart = 0
         self.ground = Ground(self.world)
         walls = Walls(self.world, BLUE)
         self.ball = Ball(self.world, BLUE)
@@ -83,7 +83,9 @@ class Field(PygameFramework):
         super(Field, self).KeyboardUp(key)
 
     def update_speeds(self):
-        self.ang_and_lin_speed = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
+        speeds = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
+        if(speeds):
+            self.ang_and_lin_speed = speeds
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
@@ -146,11 +148,8 @@ class Field(PygameFramework):
         if(only_play and self.ball.body.position[0] >= BALL_MAX_X):
             self.controller.restart = True
             print('goall!!!!')
-        self.times_since_restart +=1
-        if(self.times_since_restart%2000 and not only_play):
-            self.controller.restart
         if(self.controller.restart):
-            self.times_since_restart = 0
+            self.controller.times_since_restart = 0
             self.controller.restart = False
             self.restart()
         super(Field, self).Step(settings)
