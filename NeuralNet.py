@@ -96,19 +96,28 @@ def neural_net_model2(num_players, load=''):
 	my_shape = ((5 + 7*num_players))
 	# my_shape = 5
 	model.add(Dense(
-		40,input_shape=(my_shape,)
+		64,input_shape=(my_shape,)
 		))
-	model.add(Dense(512))	#128
-	model.add(Activation('relu'))
-	model.add(Dropout(0.2))
-
 	model.add(Dense(256))	#128
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
 
-	model.add(Dense(128))	#128
+	model.add(Dense(512))	#128
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
+
+	model.add(Dense(1024))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(1024))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(512))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
 
 
 	myn = 3*5

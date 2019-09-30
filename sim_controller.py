@@ -32,9 +32,9 @@ GOAL_REWARD = 500
 PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
-GAMMA = 0.95
-MAX_FRAMES = 500000
-ALPHA = 0.6
+GAMMA = 0.7
+MAX_FRAMES = 1000000
+ALPHA = 0.95
 EPSILON = 1	#change for 0.1
 
 
@@ -66,7 +66,7 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 
 MAX_FRAMES_GAME = 600
 
-OBSERVE_TIMES = 60 # BUFFER
+OBSERVE_TIMES = 60*4 # BUFFER
 MAX_MEMORY_BALL = 15
 
 
@@ -75,7 +75,7 @@ BATCH_SIZE = OBSERVE_TIMES #1000
 
 MAX_DIST = 152
 
-model_name = 'saved_models/mymodel_v15.h5'
+model_name = 'saved_models/mymodel_v17.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
@@ -85,7 +85,7 @@ def distance_between_ball_and_goal(body1):
 #transform an input of robot_allies, robot_opponents, and ball to a valid array
 
 def scale(number, max_s):
-	return round(1*number/max_s, 4)
+	return round(number/max_s, 3)
 def transform_to_state(robot_allies, robot_opponents, ball):
 	state = []
 	state.append(scale(ball.body.position[0], 76))
@@ -176,7 +176,8 @@ class SimController(object):
 			print('goall!!!!')
 
 		elif(self.isPlayerStuck()):
-			reward = -100
+			print('stuck')
+			reward = -50
 			self.restart = True
 			self.player_memory = deque()
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
@@ -193,6 +194,8 @@ class SimController(object):
 		if(not self.isBallMoving()):
 			reward = reward - 10
 			self.ball_memory = deque()
+		reward += 1/(0.01*distance_between_bodies(robot_allies[0].body, ball.body))
+		print('reward',reward)
 		#evaluate the reward from the game state!
 		return reward
 
@@ -257,9 +260,9 @@ class SimController(object):
 		self.times+=1
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
-		if(self.times%3000 == 0):
+		if(self.times%10000 == 0):
 			self.model.save_weights(model_name) 
-		if(self.times > MAX_FRAMES*5):
+		if(self.times > MAX_FRAMES*10):
 			self.model.save_weights(model_name)
 			exit()
 
@@ -282,11 +285,12 @@ class SimController(object):
 			max_qval = np.max(new_qval)	#maybe reevaluate
 			#print('max',max_qval)
 			y = []
+			decay = max((ALPHA - self.times/MAX_FRAMES), 0.15)
 			for old_qval_i in old_qval[0]:
 				if(self.isTerminalState(reward)):
 					y.append((reward))
 				else :
-					y.append((1 - ALPHA)*old_qval_i + ALPHA*(reward + GAMMA*max_qval))
+					y.append((1 - decay)*old_qval_i + decay*(reward + GAMMA*max_qval))
 			# y = [((1 - ALPHA)*old_qval_i + ALPHA*(reward + GAMMA*max_qval)) for old_qval_i in old_qval]
 			y = np.array(y)
 			#print(y)
@@ -319,9 +323,9 @@ class SimController(object):
 			return
 		state = transform_to_state(ally_positions, enemy_positions, ball)
 		self.old_state = state
-		print('state',state.transpose())
+		#print('state',state.transpose())
 		dec = max(EPSILON - self.decrease, 0.01)
-		print('EPSILON', dec)
+		#print('EPSILON', dec)
 		if((random.random() < dec or self.times < OBSERVE_TIMES) and not only_play):
 			action = (random.randint(0,NUMBER_OF_ACTIONS-1))
 		else :
@@ -338,7 +342,7 @@ class SimController(object):
 		self.add_speed_memory(self.speed)
 		(a,b) = self.speed
 		# print(self.isSpinning())
-		print(self.speed)
+		#print(self.speed)
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		self.decrease = self.times/MAX_FRAMES#7000000

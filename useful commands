@@ -1,2 +1,2 @@
 download file from 
-scp -i /Documents/AWS/key/gpp_lucas.pem ubuntu@ec2-54-161-103-210.compute-1.amazonaws.com:/TCC2/mymodel_10.h5 /TCC2/saved_models
+scp -i gpu_lucas.pem ubuntu@ec2-34-230-20-140.compute-1.amazonaws.com:TCC2/saved_models/mymodel_v15.h5 ~/TCC2/saved_models

@@ -20,3 +20,4 @@ log: before: using speed as actions
 tentando pular alguns estados
 
 tirar funcao de ativacao da ultima cada teve um efeito positivo
+normalizei os dados (coloquei todos entre 0 e 1)
