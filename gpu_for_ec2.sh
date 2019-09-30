@@ -12,7 +12,7 @@ blacklist rivatv
 EOF
 
 #Edit the /etc/default/grub file and add the following line:
-
+sudo nano /etc/default/grub 
 GRUB_CMDLINE_LINUX="rdblacklist=nouveau"
 
 sudo update-grub
@@ -23,9 +23,10 @@ sudo update-grub
 # where xxx.xxx represents the version of the NVIDIA driver.
 
 wget http://us.download.nvidia.com/tesla/418.87/nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
-dpkg -i nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
-apt-get update
-apt-get install cuda-drivers
+sudo apt-key add /var/nvidia-driver-local-repo-418.87.00/7fa2af80.pub
+sudo dpkg -i nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
+sudo apt-get update
+sudo apt-get install cuda-drivers
 sudo reboot
 
 nvidia-smi -q | head

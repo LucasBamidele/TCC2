@@ -33,7 +33,7 @@ PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 GAMMA = 0.95
-MAX_FRAMES = 30000
+MAX_FRAMES = 50000
 ALPHA = 0.8
 EPSILON = 1	#change for 0.1
 
@@ -64,7 +64,7 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 
 
 
-MAX_FRAMES_GAME = 2000
+MAX_FRAMES_GAME = 600
 
 OBSERVE_TIMES = 60 # BUFFER
 MAX_MEMORY_BALL = 15
@@ -313,7 +313,7 @@ class SimController(object):
 		state = transform_to_state(ally_positions, enemy_positions, ball)
 		self.old_state = state
 		#print('state',state.transpose())
-		dec = max(EPSILON - self.decrease, 0.15)
+		dec = max(EPSILON - self.decrease, 0.1)
 		print('EPSILON', dec)
 		if((random.random() < dec or self.times < OBSERVE_TIMES) and not only_play):
 			action = (random.randint(0,NUMBER_OF_ACTIONS-1))
