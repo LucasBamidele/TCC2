@@ -284,7 +284,7 @@ class SimController(object):
 			self.model.save_weights(model_name) 
 		self.times+=1
 		self.add_player_memory(robot_allies[0])
-		if(self.times > 10)#MAX_FRAMES):
+		if(self.times > MAX_FRAMES*10):
 			self.model.save(model_name)
 			import os
 			os.system("sudo shutdown -h now")
