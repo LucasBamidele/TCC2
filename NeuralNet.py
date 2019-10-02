@@ -159,40 +159,40 @@ def neural_net_model3(num_players, load=''):
 	old model
 	"""
 
-	model.add(Dense(256))	#128
-	model.add(Activation('relu'))
-	model.add(Dropout(0.2))
+	# model.add(Dense(256))	#128
+	# model.add(Activation('relu'))
+	# model.add(Dropout(0.2))
 
-	model.add(Dense(256))	#128
-	model.add(Activation('relu'))
-	model.add(Dropout(0.2))
+	# model.add(Dense(256))	#128
+	# model.add(Activation('relu'))
+	# model.add(Dropout(0.2))
 
-	model.add(Dense(256))	#128
-	model.add(Activation('relu'))
-	model.add(Dropout(0.2))
+	# model.add(Dense(256))	#128
+	# model.add(Activation('relu'))
+	# model.add(Dropout(0.2))
 
 	"""
 	new big model
 
 	"""
 
-	# model.add(LSTM(512))
+	model.add(LSTM(512))
 
-	# model.add(Dense(1024))	#128
-	# model.add(Activation('relu'))
-	# model.add(Dropout(0.3))
+	model.add(Dense(1024))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.3))
 
-	# model.add(Dense(1024))	#128
-	# model.add(Activation('relu'))
-	# model.add(Dropout(0.3))
+	model.add(Dense(1024))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.3))
 
-	# model.add(Dense(512))	#128
-	# model.add(Activation('relu'))
-	# model.add(Dropout(0.2))
+	model.add(Dense(512))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
 
-	# model.add(Dense(512))	#128
-	# model.add(Activation('relu'))
-	# model.add(Dropout(0.2))
+	model.add(Dense(512))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
 
 
 	myn = 11*5
