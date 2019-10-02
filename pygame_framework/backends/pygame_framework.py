@@ -348,7 +348,7 @@ class PygameFramework(FrameworkBase):
 
                 pygame.display.flip()
                 # clock.tick(self.settings.hz)
-                clock.tick(10000)
+                clock.tick(100000)
                 self.fps = clock.get_fps()
                 print('fps: ',self.fps)
                 
