@@ -176,8 +176,6 @@ def neural_net_model3(num_players, load=''):
 
 	"""
 
-	model.add(LSTM(512))
-
 	model.add(Dense(1024))	#128
 	model.add(Activation('relu'))
 	model.add(Dropout(0.3))
