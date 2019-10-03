@@ -75,7 +75,7 @@ BATCH_SIZE = OBSERVE_TIMES #1000
 
 MAX_DIST = 152
 
-model_name = 'saved_models/mymodel_v20_lstm.h5'
+model_name = 'saved_models/mymodel_v19_lstm.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
@@ -367,9 +367,9 @@ class SimController(object):
 			action = (random.randint(0,NUMBER_OF_ACTIONS-1))
 		else :
 			stat = np.array(self.past_states)
-			print(stat.shape)
 			stat = stat.reshape(1, OBSERVE_TIMES, NUM_FEATURES)
 			predicted_qval = self.model.predict(stat) #checar batch size!!
+			# print(predicted_qval)
 			action = np.argmax(predicted_qval)
 		#print(action)
 		self.action_number = action
@@ -378,7 +378,7 @@ class SimController(object):
 		self.speed[1] += self.action[1]
 		self.speed = self.action_saturate(self.speed)
 		self.add_speed_memory(self.speed)
-		print(self.speed)
+		#print(self.speed)
 		(a,b) = self.speed
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]

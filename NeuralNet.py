@@ -123,10 +123,10 @@ def neural_net_model2(num_players, load=''):
 	return model
 
 def neural_net_model2_5(num_players, load=''):
-	my_shape = ((5 + 8*num_players))
+	my_shape = ((1 + 3*num_players))
 	main_input = Input(shape=(my_shape,), name='main_input')
 
-	x = Dense(64, activation='relu')(main_input)
+	x = Dense(128, activation='relu')(main_input)
 	x = Dropout(0.1)(x)
 	x = Dense(128, activation='relu')(x)
 	x = Dropout(0.1)(x)

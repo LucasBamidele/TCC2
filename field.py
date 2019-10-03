@@ -14,7 +14,8 @@ from constants import *
 from objects_on_field.objects import *
 from pygame_framework.framework import *
 #import sim_controller as sc
-import sim_cnn_controller as sc
+import sim_controller2 as sc
+# import sim_cnn_controller as sc
 import random
 import ContactListener as cl
 
