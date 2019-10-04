@@ -177,7 +177,7 @@ def neural_net_model2(num_players, load=''):
 
 def neural_net_model2_5(num_players, load=''):
 	if(gpu_enable):
-		with tf.device(device):
+		with tf.device('/device:XLA:GPU:0'):
 			my_shape = ((1 + 3*num_players))
 			main_input = Input(shape=(my_shape,), name='main_input')
 
@@ -227,12 +227,14 @@ def neural_net_model4(num_players, load=''):
 			my_shape = ((5 + 2*8*num_players))
 			main_input = Input(shape=(my_shape,), name='main_input')
 
-			x = Dense(512, activation='relu')(main_input)
-			x = Dropout(0.1)(x)
-			x = Dense(512, activation='relu')(x)
-			x = Dropout(0.1)(x)
-			x = Dense(512, activation='relu')(x)
-			x = Dropout(0.1)(x)
+			x = Dense(64, activation='relu')(main_input)
+			x = Dropout(0.15)(x)
+			x = Dense(1024, activation='relu')(x)
+			x = Dropout(0.15)(x)
+			x = Dense(1024, activation='relu')(x)
+			x = Dropout(0.15)(x)
+			x = Dense(1024, activation='relu')(x)
+			x = Dropout(0.15)(x)
 
 			lin_v = Dense(11, name='linear_velocity1')(x)
 			ang_v = Dense(5, name='angular_velocity1')(x)
@@ -241,26 +243,25 @@ def neural_net_model4(num_players, load=''):
 			lin_v3 = Dense(11, name='linear_velocity3')(x)
 			ang_v3 = Dense(5, name='angular_velocity3')(x)
 
-			model = Model(main_input, outputs=[ang_v, lin_v])
+			model = Model(main_input, outputs=[ang_v, lin_v, ang_v2, lin_v2, ang_v3, lin_v3])
 			rms = RMSprop()
 			model.compile(loss='mse', optimizer=rms)
 			if(load):
 				print('loading model')
 				model.load_weights(load)
 
-			return model
 	else :
 		my_shape = ((5 + 2*8*num_players))
 		main_input = Input(shape=(my_shape,), name='main_input')
 
 		x = Dense(64, activation='relu')(main_input)
 		x = Dropout(0.15)(x)
-		# x = Dense(1024, activation='relu')(x)
-		# x = Dropout(0.15)(x)
-		# x = Dense(1024, activation='relu')(x)
-		# x = Dropout(0.15)(x)
-		# x = Dense(1024, activation='relu')(x)
-		# x = Dropout(0.15)(x)
+		x = Dense(1024, activation='relu')(x)
+		x = Dropout(0.15)(x)
+		x = Dense(1024, activation='relu')(x)
+		x = Dropout(0.15)(x)
+		x = Dense(1024, activation='relu')(x)
+		x = Dropout(0.15)(x)
 
 		lin_v = Dense(11, name='linear_velocity1')(x)
 		ang_v = Dense(5, name='angular_velocity1')(x)
@@ -275,7 +276,6 @@ def neural_net_model4(num_players, load=''):
 		if(load):
 			print('loading model')
 			model.load_weights(load)
-			print('ladasdladadladlalsdlasdlas')
 
 		return model
 
