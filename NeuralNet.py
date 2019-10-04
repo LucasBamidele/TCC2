@@ -254,7 +254,7 @@ def neural_net_model4(num_players, load=''):
 		my_shape = ((5 + 2*8*num_players))
 		main_input = Input(shape=(my_shape,), name='main_input')
 
-		x = Dense(64, activation='relu')(main_input)
+		x = Dense(256, activation='relu')(main_input)
 		x = Dropout(0.15)(x)
 		x = Dense(1024, activation='relu')(x)
 		x = Dropout(0.15)(x)
