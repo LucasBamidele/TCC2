@@ -93,8 +93,8 @@ clock = pygame.time.Clock()
 dt = 1 / FPS
 
 # Global variables
-num_allies = 1
-num_opponents = 0
+num_allies = 3
+num_opponents = 3
 team_color = 0  # blue   = 0
                 # yellow = 1
 publish_topic = 'vision_output_topic'
@@ -301,7 +301,6 @@ def start_menu():
 
         # Main menu
         #main_menu.mainloop(events)
-
         Field(num_allies, num_opponents, team_color, field_side, publish_topic)
 
         # Flip surface

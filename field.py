@@ -14,8 +14,9 @@ from constants import *
 from objects_on_field.objects import *
 from pygame_framework.framework import *
 #import sim_controller as sc
-import sim_controller2 as sc
+# import sim_controller2 as sc
 # import sim_cnn_controller as sc
+import sim_controller3 as sc
 import random
 import ContactListener as cl
 
@@ -33,6 +34,7 @@ class Field(PygameFramework):
     def __init__(self, num_allies, num_opponents, team_color, field_side, publish_topic):
         PygameFramework.__init__(self)
         self.controller = sc.SimController()
+        self.controller2 = sc.SimController(enemy=True)
         self.ang_and_lin_speed = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
         #RunRos.__init__(self, publish_topic)
         # Top-down -- no gravity in the screen plane
@@ -74,6 +76,7 @@ class Field(PygameFramework):
                                  position=(-self.init_x_position[x], x) 
                                  ) for x in range(self.num_opponents)]
         self.robots_allies[0].body.angle = 0
+        self.initial_pos()
 
         super(Field, self).run()
         
@@ -83,20 +86,40 @@ class Field(PygameFramework):
     def KeyboardUp(self, key):
         super(Field, self).KeyboardUp(key)
 
+    def initial_pos(self):
+        for x in range(self.num_allies):
+            self.robots_allies[x].body.position = (-65,-20 + 20*x)
+            self.robots_allies[x].body.angle = 0 #math.pi/2
+        for x in range(self.num_opponents):
+            self.robots_opponents[x].body.position = (65,(-20 + 20*x))
+            self.robots_opponents[x].body.angle = math.pi
+
+
     def update_speeds(self):
-        speeds = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
-        if(speeds):
+        speed1 = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
+        speed2 = self.controller2.sync_control_centrallized(self.robots_opponents, self.robots_allies, self.ball)
+        if(speed1 and speed2):
+            speeds = speed1 + speed2
             self.ang_and_lin_speed = speeds
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
+        self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
 
     def restart(self):
-        random_x = random.randint(-65,5)
-        random_y = random.randint(-50,50)
-        angle = random.random()*2*math.pi
-        self.robots_allies[0].body.position = (random_x,random_y)
-        self.robots_allies[0].body.angle = angle #math.pi/2
+        for x in range(self.num_allies):
+            random_x = random.randint(-65,5)
+            random_y = random.randint(-50,50)
+            angle = random.random()*2*math.pi
+            self.robots_allies[x].body.position = (random_x,random_y)
+            self.robots_allies[x].body.angle = angle #math.pi/2
+        for x in range(self.num_opponents):
+            random_x = random.randint(5,65)
+            random_y = random.randint(-50,50)
+            angle = random.random()*2*math.pi
+            self.robots_opponents[x].body.position = (random_x,random_y)
+            self.robots_opponents[x].body.angle = angle #math.pi/2
+
 
         self.ball.body.position = (0,0)
         self.ball.body.linearVelocity = (0,0)
@@ -108,7 +131,7 @@ class Field(PygameFramework):
                 self.robots_allies[x].update(self.ang_and_lin_speed[x], settings.hz)
 
             for x in range(self.num_opponents):
-                self.robots_opponents[x].update(self.ang_and_lin_speed[self.num_allies +x], 
+                self.robots_opponents[x].update(self.ang_and_lin_speed[5 + x], 
                                                 settings.hz)
         else:
             for x in range(self.num_allies):

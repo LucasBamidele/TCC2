@@ -22,10 +22,14 @@ sudo update-grub
 # For P2 and P3 instances, the following command downloads the NVIDIA driver,
 # where xxx.xxx represents the version of the NVIDIA driver.
 
-wget http://us.download.nvidia.com/tesla/418.87/nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
-sudo dpkg -i nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
-sudo apt-key add /var/nvidia-driver-local-repo-418.87.00/7fa2af80.pub
-sudo dpkg -i nvidia-driver-local-repo-ubuntu1804-418.87.00_1.0-1_amd64.deb
+
+# wget http://us.download.nvidia.com/tesla/410.104/NVIDIA-Linux-x86_64-410.104.run
+# sudo sh ./NVIDIA-Linux-x86_64-410.104.run --no-drm --disable-nouveau --dkms --silent --install-libglvnd
+
+wget http://us.download.nvidia.com/tesla/410.129/nvidia-diag-driver-local-repo-ubuntu1804-410.129_1.0-1_amd64.deb
+sudo dpkg -i nvidia-diag-driver-local-repo-ubuntu1804-410.129_1.0-1_amd64.deb
+sudo apt-key add /var/nvidia-diag-driver-local-repo-410.129/7fa2af80.pub
+sudo dpkg -i nvidia-diag-driver-local-repo-ubuntu1804-410.129_1.0-1_amd64.deb
 sudo apt-get update
 sudo apt-get install cuda-drivers
 sudo reboot
@@ -33,6 +37,8 @@ sudo reboot
 nvidia-smi -q | head
 
 git clone https://github.com/LucasBamidele/TCC2.git
+cd TCC2
+./install_dep_aws.sh
 
 from tensorflow.python.client import device_lib
 print(device_lib.list_local_devices())
@@ -40,3 +46,7 @@ print(device_lib.list_local_devices())
 tmux new -s mywindow
 
 tmux a -t mywindow
+
+# talvez tentar fazer isso primeiro
+#sudo apt-get install nvidia-cuda-toolkit
+# sudo reboot
