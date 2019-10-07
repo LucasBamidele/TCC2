@@ -175,6 +175,7 @@ class Field(PygameFramework):
         if(self.controller.restart):
             self.controller.times_since_restart = 1
             self.controller.restart = False
+            self.controller2.restart = False
             self.restart()
         super(Field, self).Step(settings)
 

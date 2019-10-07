@@ -153,7 +153,7 @@ def transform_to_state(robot_allies, robot_opponents, ball):
 
 class SimController(object):
 	"""docstring for SimController"""
-	def __init__(self):
+	def __init__(self, enemy=False):
 		self.decrease = 0.0
 		self.restart = False
 		self.times = 1

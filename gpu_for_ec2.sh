@@ -47,6 +47,9 @@ tmux new -s mywindow
 
 tmux a -t mywindow
 
+
+anaconda3/envs/tensorflow_p36/bin/pip install pygame
+
 # talvez tentar fazer isso primeiro
 #sudo apt-get install nvidia-cuda-toolkit
 # sudo reboot

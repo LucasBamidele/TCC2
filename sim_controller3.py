@@ -12,13 +12,17 @@ import NeuralNet as nn
 import random
 from keras.utils import to_categorical
 from collections import deque
-from time import sleep
+from time import sleep, time
 import sys
 import math
 
 #TODO aceleracao em vez de velocidades
 #trablahar nos hiperparametros
 #aumentar recompensas vs recompensas negativas
+
+##ULTIMO TREINAMENTO PAROU EM 90 episodios!
+#90* 3600
+#32400 times!
 load_model = False
 only_play = False
 if(len(sys.argv)>1):
@@ -127,9 +131,7 @@ def angle_between_bodies(body1, body2, angle=False):
 def scale(number, max_s,angle=False):
 	if(angle):
 		if(number > 2*math.pi):
-			print(number)
 			number -= 2*math.pi
-			print(number)
 	return round(number/max_s, 2)
 def transform_to_state(robot_allies, robot_opponents, ball, enemy= False):
 	state = []
@@ -198,7 +200,7 @@ class SimController(object):
 		self.isEnemy = enemy
 		self.decrease = 0.0
 		self.restart = False
-		self.times = 1
+		self.times = 1#324001#1
 		self.iterations = 0
 		self.replay_memory = []
 		self.old_state = None
@@ -215,9 +217,9 @@ class SimController(object):
 			for linear in range(-MAX_LIN_ACCEL, MAX_LIN_ACCEL +1):
 				self.action_space.append((angle, linear))
 		self.speed = [[0,0],[0,0],[0,0],[0,0],[0,0]]
-		self.model_name = 'mymodel_episodic_v2.h5'
+		self.model_name = None#'mymodel_episodic_v3.h5'
 		if(self.isEnemy):
-			self.model_name= 'enemy_' + self.model_name
+			self.model_name= None#'enemy_' + self.model_name
 		self.action = None
 		if(only_play or load_model):
 			self.model = nn.neural_net_model4(NUMBER_OF_PLAYERS, self.model_name)
@@ -338,22 +340,29 @@ class SimController(object):
 			self.replay_memory.append((self.old_state[:], self.action_number_ang, self.action_number_lin, reward, new_state[:]))
 			batch = self.replay_memory
 			self.replay_memory = []
-			x_train, angv1_train, linv1_train, angv2_train, linv2_train, angv3_train, linv3_train = self.generate_train_from_batch(batch)
+			print(self.replay_memory)
+			ts = time()
+			x_train, angv1_train, linv1_train, angv2_train, linv2_train, angv3_train, linv3_train = self.generate_train_from_batch2(batch)
+			# x_train2, angv1_train2, linv1_train2, angv2_train2, linv2_train2, angv3_train2, linv3_train2 = self.generate_train_from_batch(batch)
+			print('time for creating batch:', (time() - ts)*1000, ' ms')
 			print('fitting...')
+			ts = time()
 			self.model.fit(x_train, [angv1_train, linv1_train, angv2_train, linv2_train, angv3_train, linv3_train], batch_size=BATCH_SIZE, epochs=10, verbose=0)
+			print('time for fitting: ', (time() - ts)*1000, ' ms')
+		
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
 		if(self.times%MAX_FRAMES_GAME==0):
 			print('saving and restarting...')
 			self.episodes+=1
 			self.restart = True
-			self.model.save_weights(self.model_name)
+			#self.model.save_weights(self.model_name)
 		if(self.restart):
 			self.treatRestart()
 		self.times+=1
 		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			print('saving and exiting ...')
-			self.model.save(self.model_name)
+			#self.model.save(self.model_name)
 			exit()
 
 	def treatRestart(self):
@@ -368,6 +377,55 @@ class SimController(object):
 			return True
 		return False
 
+	def generate_train_from_batch2(self, batch):
+		x_train = []
+		angv1_train = []
+		linv1_train = []
+		angv2_train = []
+		linv2_train = []
+		angv3_train = []
+		linv3_train = []
+		decay = ALPHA
+		mb_len = len(batch)
+
+		old_states = np.zeros(shape=(mb_len,NUM_FEATURES))
+		rewards = np.zeros(shape=(mb_len,))
+		lin_actions = np.zeros(shape=(mb_len,NUMBER_OF_PLAYERS,))
+		ang_actions = np.zeros(shape=(mb_len,NUMBER_OF_PLAYERS,))
+		new_states = np.zeros(shape=(mb_len, NUM_FEATURES))
+		for i, memory in enumerate(batch):
+			old_state_m, action_number_ang, action_number_lin, reward_m, new_state_m = memory
+			old_states[i, :] = old_state_m.transpose()[...]
+			lin_actions[i] = action_number_lin
+			ang_actions[i] = action_number_ang
+			rewards[i] = reward_m
+			new_states[i, :] = new_state_m.transpose()[...]
+		old_qvals = self.model.predict(old_states, batch_size=mb_len)
+		new_qvals = self.model.predict(new_states, batch_size=mb_len)
+		maxQs = [np.max(new_qval, axis=1) for new_qval in new_qvals]
+		maxQs = np.array(maxQs)
+		# maxQs = np.max(new_qvals[0], axis=1)
+		y = old_qvals[:]
+		batch_list = np.linspace(0,mb_len-1,mb_len, dtype=int)
+		j= 0
+		for i in range(0,NUMBER_OF_PLAYERS):
+			y[j][batch_list, ang_actions[batch_list,i].astype(int)] = rewards[batch_list] + (GAMMA * maxQs[j][batch_list])
+			j+=1
+			y[j][batch_list, lin_actions[batch_list,i].astype(int)] = rewards[batch_list] + (GAMMA * maxQs[j][batch_list])
+			j+=1
+
+
+		angv1_train = y[0]
+		linv1_train = y[1]
+		angv2_train = y[2]
+		linv2_train = y[3]
+		angv3_train = y[4]
+		linv3_train = y[5]
+
+		X_train = old_states
+		y_train = y
+		return X_train, angv1_train, linv1_train, angv2_train, linv2_train, angv3_train, linv3_train
+
 
 	def generate_train_from_batch(self, batch):
 		x_train = []
@@ -377,6 +435,7 @@ class SimController(object):
 		linv2_train = []
 		angv3_train = []
 		linv3_train = []
+
 		for memory in batch:
 			old_state, action_number_ang, action_number_lin, reward, new_state = memory
 			old_qval = self.model.predict(old_state.transpose())
