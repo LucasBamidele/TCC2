@@ -16,7 +16,7 @@ from pygame_framework.framework import *
 #import sim_controller as sc
 # import sim_controller2 as sc
 # import sim_cnn_controller as sc
-import sim_controller3 as sc
+import sim_controller2 as sc
 import random
 import ContactListener as cl
 
@@ -34,7 +34,7 @@ class Field(PygameFramework):
     def __init__(self, num_allies, num_opponents, team_color, field_side, publish_topic):
         PygameFramework.__init__(self)
         self.controller = sc.SimController()
-        self.controller2 = sc.SimController(enemy=True)
+        #self.controller2 = sc.SimController(enemy=True)
         self.ang_and_lin_speed = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
         #RunRos.__init__(self, publish_topic)
         # Top-down -- no gravity in the screen plane
@@ -97,14 +97,11 @@ class Field(PygameFramework):
 
     def update_speeds(self):
         speed1 = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
-        speed2 = self.controller2.sync_control_centrallized(self.robots_opponents, self.robots_allies, self.ball)
-        if(speed1 and speed2):
-            speeds = speed1 + speed2
-            self.ang_and_lin_speed = speeds
+        if(speed1):
+            self.ang_and_lin_speed = speed1
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
-        self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
 
     def restart(self):
         for x in range(self.num_allies):

@@ -12,7 +12,7 @@ import NeuralNet as nn
 import random
 from keras.utils import to_categorical
 from collections import deque
-from time import sleep
+from time import sleep, time
 import sys
 import math
 
@@ -32,7 +32,7 @@ GOAL_REWARD = 500
 PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
-GAMMA = 0.9
+GAMMA = 0.6
 MAX_FRAMES = 80000
 ALPHA = 0.7
 EPSILON = 1	#change for 0.1
@@ -55,13 +55,16 @@ NB_LIN_ACT = (MAX_LIN_ACCEL*2+1)
 NB_ANG_ACT = (MAX_ANG_ACCEL*2 +1)
 NUMBER_OF_ACTIONS = NB_ANG_ACT*NB_LIN_ACT
 
+LIN_SPEED_VEC = [50, 0, -30]
+ANG_SPEED_VEC = [3, 0, -3]
+
 NUMBER_OF_PLAYERS = 1
 
 
 BALL_MAX_X = 76
 BALL_MIN_X = -76
 FEATURE_PLAYER = 3#8
-NUMBER_BALL_FEATURES = 1#5
+NUMBER_BALL_FEATURES = 6#5
 NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 
 LIN_ACCEL_VEC = [i for i in range(-5,6)]
@@ -69,10 +72,10 @@ ANG_ACCEL_VEC = [i for i in range(-2, 3)]
 
 MAX_FRAMES_GAME = 900
 
-OBSERVE_TIMES = 3600#3600 # BUFFER
+OBSERVE_TIMES = 120#1800#3600 # BUFFER
 MAX_MEMORY_BALL = 15
 
-MAX_EPISODES = 1000
+MAX_EPISODES = 50
 
 
 BATCH_SIZE = OBSERVE_TIMES #OBSERVE_TIMES #1000
@@ -80,7 +83,7 @@ BATCH_SIZE = OBSERVE_TIMES #OBSERVE_TIMES #1000
 
 MAX_DIST = 152
 
-model_name = 'mymodel_episodic_v1.h5'
+model_name = 'mymodel_episodic_v3.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def dotproduct(v1, v2):
   return sum((a*b) for a, b in zip(v1, v2))
@@ -121,24 +124,34 @@ def angle_between_bodies(body1, body2):
 		return math.pi + number
 
 	return math.atan(())
-def scale(number, max_s):
-	return round(number/max_s, 2)
-def transform_to_state(robot_allies, robot_opponents, ball):
+def scale(number, max_s, angle=False):
+	if(angle):
+		if(number > 2*math.pi):
+			number -= 2*math.pi
+	return round(((number/max_s)), 2)
+def transform_to_state(robot_allies, robot_opponents, ball, inputs=None):
 	state = []
-	# state.append(scale(ball.body.position[0], 76))
-	# state.append(scale(ball.body.position[1], 60))
+	state.append(scale(ball.body.position[0], 76))
+	state.append(scale(ball.body.position[1], 60))
 	# state.append(scale(ball.body.linearVelocity[0], 50))
 	# state.append(scale(ball.body.linearVelocity[1], 50))
 	state.append(scale(distance_between_ball_and_goal(ball.body),152))
 	for a in range(NUMBER_OF_PLAYERS):
-		# state.append(scale(robot_allies[a].body.position[0],76))
-		# state.append(scale(robot_allies[a].body.position[1],60))
+		state.append(scale(robot_allies[a].body.position[0],76))
+		state.append(scale(robot_allies[a].body.position[1],60))
 		state.append(scale(robot_allies[a].body.angle,2*math.pi))
-		# state.append(scale(robot_allies[a].body.linearVelocity[0],50))
-		# state.append(scale(robot_allies[a].body.linearVelocity[1],50))
+		state.append(inputs[0])
+		state.append(inputs[1])
+		#state.append(scale(robot_allies[a].body.linearVelocity[0],50))
+		#state.append(scale(robot_allies[a].body.linearVelocity[1],50))
 		# state.append(scale(robot_allies[a].body.angularVelocity, 6))
-		state.append(scale(distance_between_bodies(robot_allies[a].body, ball.body), 152))
-		state.append(scale(angle_between_bodies(robot_allies[a].body, ball.body),2*math.pi))
+		# state.append(scale(distance_between_bodies(robot_allies[a].body, ball.body), 152))
+		# state.append(scale(angle_between_bodies(robot_allies[a].body, ball.body),2*math.pi))
+		# state.append(scale(distance_cool(robot_allies[a].body.angle, angle_between_bodies(robot_allies[a].body, ball.body)),math.pi))
+		
+		# state.append(distance_between_bodies(robot_allies[a].body, ball.body))
+		# state.append(angle_between_bodies(robot_allies[a].body, ball.body))
+		state.append(distance_cool(robot_allies[a].body.angle, angle_between_bodies(robot_allies[a].body, ball.body)))
 	#print('distance between: ', distance_between_bodies(robot_allies[0].body, ball.body))
 	#print('angle between: ', math.degrees(angle_between_bodies(robot_allies[a].body, ball.body)))
 	state = np.array(state)
@@ -208,18 +221,23 @@ class SimController(object):
 		self.player_memory.append((player.body.position[0], player.body.position[1]))
 	#TODO
 	def getReward(self, new_state, robot_allies, robot_opponents, ball):
-		reward = 0 #- self.t_hits//30
+		reward = -1 #- self.t_hits//30
 		diff_direction = distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body))
 		diff_distance = distance_between_bodies(robot_allies[0].body, ball.body)
-		if(diff_direction == 0):
-			diff_direction = 0.1
-		reward += 2/diff_direction + 2/diff_distance
+		# if(diff_direction < 0.01):
+		# 	diff_direction = 0.01
+		if(diff_distance < 1):
+			diff_distance = 1 
+		# print('diff_distance',diff_distance)
+		# print('diff direct', diff_direction)
+		reward += 1/(0.1 + diff_direction) + 1/(0.05 + 0.01*diff_distance)
 		ball_x = ball.body.position[0]
 		if(ball_x <= BALL_MIN_X):
-			reward = self.reward['enemy_goal']
+			pass
+			#reward = self.reward['enemy_goal']
 			# self.restart = True
 		elif(ball_x >= BALL_MAX_X):
-			reward = self.reward['goal']
+			#reward = self.reward['goal']
 			# self.restart = True
 			print('goall!!!!')
 
@@ -230,10 +248,10 @@ class SimController(object):
 			self.player_memory = deque()
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
 			self.t_hits = 0
-			reward = 200
-		elif(self.times%MAX_FRAMES_GAME == 0 and ball_x < BALL_MAX_X):
-			self.restart = True
-			reward = -500
+			reward += 200
+		# elif(self.times%MAX_FRAMES_GAME == 0 and ball_x < BALL_MAX_X):
+		# 	self.restart = True
+		# 	reward = -500
 		elif(self.isSpinning()):
 			print('stuck spinning')
 			reward = -30
@@ -287,11 +305,12 @@ class SimController(object):
 
 
 	def compute(self, robot_allies, robot_opponents, ball):
-		if(self.times%3 != 0 and not only_play):
+		if(self.times%4 != 0 and not only_play):
 			self.times+=1
 			return
-		new_state = transform_to_state(robot_allies, robot_opponents, ball)
+		new_state = transform_to_state(robot_allies, robot_opponents, ball, [self.action_number_ang, self.action_number_lin])
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
+		#print('reward: ',reward)
 		if(len(self.replay_memory) < OBSERVE_TIMES-1 and (not self.restart)):
 			self.replay_memory.append((self.old_state[:], self.action_number_ang, self.action_number_lin, reward, new_state[:]))
 		else :
@@ -300,16 +319,22 @@ class SimController(object):
 			#build batch
 			#batch = random.sample(self.replay_memory, BATCH_SIZE)
 			batch = self.replay_memory
-			self.replay_memory = []
-			#x_train, y_train = self.generate_train_from_batch(batch)
-			x_train, y_train, y2_train = self.generate_train_from_batch(batch)
+			t1 = time()
+			x_train, y_train, y2_train = self.generate_train_from_batch2(batch)
+			elapsed = time() - t1
+			print('time to batch: ', elapsed*1000, 'ms')
 			#x_train = np.expand_dims(x_train, axis=2)
 			print('fitting...')
+			self.replay_memory = []
+			t1 = time()
 			self.model.fit(x_train, [y_train,y2_train], batch_size=BATCH_SIZE, epochs=5, verbose=0)
+			elapsed = time() - t1
+			print('time to fit: ', elapsed*1000, 'ms')
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
 		if(self.times%MAX_FRAMES_GAME==0):
 			print('saving and restarting...')
+			print(self.episodes, 'out of ', MAX_EPISODES*10)
 			self.episodes+=1
 			self.restart = True
 			self.model.save_weights(model_name)
@@ -332,6 +357,34 @@ class SimController(object):
 			return True
 		return False
 
+	def generate_train_from_batch2(self, batch):
+		x_train = []
+		decay = ALPHA
+		mb_len = len(batch)
+		old_states = np.zeros(shape=(mb_len,NUM_FEATURES))
+		rewards = np.zeros(shape=(mb_len,))
+		lin_actions = np.zeros(shape=(mb_len,NUMBER_OF_PLAYERS,))
+		ang_actions = np.zeros(shape=(mb_len,NUMBER_OF_PLAYERS,))
+		new_states = np.zeros(shape=(mb_len, NUM_FEATURES))
+		for i, memory in enumerate(batch):
+			old_state_m, action_number_ang, action_number_lin, reward_m, new_state_m = memory
+			old_states[i, :] = old_state_m.transpose()[...]
+			lin_actions[i] = action_number_lin
+			ang_actions[i] = action_number_ang
+			rewards[i] = reward_m
+			new_states[i, :] = new_state_m.transpose()[...]
+		old_qvals = self.model.predict(old_states, batch_size=mb_len)
+		new_qvals = self.model.predict(new_states, batch_size=mb_len)
+		maxQs = [np.max(new_qval, axis=1) for new_qval in new_qvals]
+		maxQs = np.array(maxQs)
+		# maxQs = np.max(new_qvals[0], axis=1)
+		y = old_qvals[:]
+		batch_list = np.linspace(0,mb_len-1,mb_len, dtype=int)
+		y[0][batch_list, ang_actions[batch_list,0].astype(int)] = (1-ALPHA)*y[0][batch_list, ang_actions[batch_list,0].astype(int)] + ALPHA*(rewards[batch_list] + (GAMMA * maxQs[0][batch_list]))
+		y[1][batch_list, lin_actions[batch_list,0].astype(int)] = (1-ALPHA)*y[1][batch_list, lin_actions[batch_list,0].astype(int)] + ALPHA*(rewards[batch_list] + (GAMMA * maxQs[1][batch_list]))
+		X_train = old_states
+		return X_train, y[0], y[1]
+
 
 	def generate_train_from_batch(self, batch):
 		x_train = []
@@ -348,8 +401,10 @@ class SimController(object):
 			max_qval_lin = np.max(new_qval[1])
 			if(not self.isTerminalState(reward)):
 				update = reward + GAMMA*max_qval_ang
+				update2 = reward + GAMMA*max_qval_lin
 			else :
 				update = reward
+				update2 = reward
 			#decay = max((ALPHA - self.times/(MAX_FRAMES*6)), 0.15)
 			decay = ALPHA
 			y = []
@@ -360,8 +415,9 @@ class SimController(object):
 			y2 = []
 			y2[:] = old_qval[1][:]
 			old_qval_action = y2[0][action_number_lin]
-			y2[0][action_number_lin] = (1-decay)*old_qval_action + decay*update
-			
+			print(y2[0][action_number_lin])
+			y2[0][action_number_lin] = (1-decay)*old_qval_action + decay*update2
+			print(y2[0][action_number_lin])
 			y = np.array(y)
 			y2 = np.array(y2)
 			x_train.append(old_state.reshape((NUM_FEATURES),))
@@ -384,46 +440,45 @@ class SimController(object):
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		if(only_play):
 			self.times +=1
-		if(self.times%3!=0 and not only_play):
+		if(self.times%4!=0): #and not only_play):
 			return
-		state = transform_to_state(ally_positions, enemy_positions, ball)
+		lastinputs = [self.action_number_ang, self.action_number_lin]
+		state = transform_to_state(ally_positions, enemy_positions, ball, lastinputs)
 		self.old_state = state[:]
 		#print('state',state.transpose())
 		dec = max(EPSILON - self.decrease, 0.01)
-		print('EPSILON', dec)
+		#print('EPSILON', dec)
 		if((random.random() < dec or self.times < OBSERVE_TIMES) and not only_play):
-			action_ang = random.randint(0, (len(ANG_ACCEL_VEC)-1))
-			action_lin = random.randint(0, (len(LIN_ACCEL_VEC)-1))
+			# action_ang = random.randint(0, (len(ANG_ACCEL_VEC)-1))
+			# action_lin = random.randint(0, (len(LIN_ACCEL_VEC)-1))
+			action_ang = random.randint(0, (len(ANG_SPEED_VEC)-1))
+			action_lin = random.randint(0, (len(LIN_SPEED_VEC)-1))
 			#action = (random.randint(0,NUMBER_OF_ACTIONS-1))
 		else :
-			predicted_qval = self.model.predict(state.transpose(), batch_size=1) #checar batch size!!
+			predicted_qval = self.model.predict(state[:].transpose(), batch_size=1) #checar batch size!!
 			#predicted_qval = self.model.predict(np.expand_dims(state.transpose(),axis=2), batch_size=1) #checar batch size!!
-			#print('pred val', predicted_qval)
-			#print(predicted_qval)
 			#action = np.argmax(predicted_qval)
+			# print('val:', predicted_qval)
 			action_ang = np.argmax(predicted_qval[0])
 			action_lin = np.argmax(predicted_qval[1])
-		ang_accel = ANG_ACCEL_VEC[action_ang]
-		lin_accel = LIN_ACCEL_VEC[action_lin]
+		self.speed = [ANG_SPEED_VEC[action_ang],LIN_SPEED_VEC[action_lin]]
+		# ang_accel = ANG_ACCEL_VEC[action_ang]
+		# lin_accel = LIN_ACCEL_VEC[action_lin]
 		self.action_number_ang = action_ang
 		self.action_number_lin = action_lin
-
-		self.action = [ang_accel, lin_accel]
-		print('action: ', self.action)
-		self.speed[0] += self.action[0]
-		self.speed[1] += self.action[1]
-		self.speed = self.action_saturate(self.speed)
+		# self.action = [ang_accel, lin_accel]
+		# #print('action: ', self.action)
+		# self.speed[0] += self.action[0]
+		# self.speed[1] += self.action[1]
+		# self.speed = self.action_saturate(self.speed)
 		self.add_speed_memory(self.speed)
-		print('speed: ', self.speed)
+		#print('speed: ', self.speed)
 		(a,b) = self.speed
-		# print(self.isSpinning())
-		#print(self.speed)
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		#self.decrease = self.times/MAX_FRAMES#7000000
 		self.decrease = self.episodes/(MAX_EPISODES*3)
 		# print(self.times, 'out of ', MAX_FRAMES*10)
-		print(self.episodes, 'out of ', MAX_EPISODES*10)
 		return (allies+enemies)
 
 

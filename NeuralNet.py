@@ -1,9 +1,10 @@
 from keras.models import Sequential, Model
 from keras.layers.core import Dense, Activation, Dropout, Flatten
-from keras.optimizers import RMSprop
+from keras.optimizers import RMSprop, Adam
 from keras.layers.recurrent import LSTM
 from keras.callbacks import Callback
 from keras.layers import Conv1D, MaxPooling1D, Input
+from keras.initializers import Zeros
 import tensorflow as tf
 from time import sleep
 import sys
@@ -176,51 +177,28 @@ def neural_net_model2(num_players, load=''):
 	return model
 
 def neural_net_model2_5(num_players, load=''):
-	if(gpu_enable):
-		with tf.device('/device:XLA:GPU:0'):
-			my_shape = ((1 + 3*num_players))
-			main_input = Input(shape=(my_shape,), name='main_input')
+	my_shape = ((3 + 6*num_players))
+	main_input = Input(shape=(my_shape,), name='main_input')
 
-			x = Dense(128, activation='relu')(main_input)
-			x = Dropout(0.1)(x)
-			x = Dense(128, activation='relu')(x)
-			x = Dropout(0.1)(x)
-			x = Dense(128, activation='relu')(x)
-			x = Dropout(0.1)(x)
+	x = Dense(32, activation='relu', kernel_initializer='lecun_uniform')(main_input)
+	x = Dropout(0.3)(x)
+	x = Dense(32, activation='relu', kernel_initializer='lecun_uniform')(x)
+	x = Dropout(0.3)(x)
+	x = Dense(32, activation='relu', kernel_initializer='lecun_uniform')(x)
+	x = Dropout(0.3)(x)
 
-			lin_v = Dense(11, name='linear_velocity')(x)
-			ang_v = Dense(5, name='angular_velocity')(x)
+	lin_v = Dense(3, name='linear_velocity')(x)
+	ang_v = Dense(3, name='angular_velocity')(x)
 
-			model = Model(main_input, outputs=[ang_v, lin_v])
-			rms = RMSprop()
-			model.compile(loss='mse', optimizer=rms)
-			if(load):
-				print('loading model')
-				model.load_weights(load)
-
-			return model
-	else :
-		my_shape = ((1 + 3*num_players))
-		main_input = Input(shape=(my_shape,), name='main_input')
-
-		x = Dense(128, activation='relu')(main_input)
-		x = Dropout(0.1)(x)
-		x = Dense(128, activation='relu')(x)
-		x = Dropout(0.1)(x)
-		x = Dense(128, activation='relu')(x)
-		x = Dropout(0.1)(x)
-
-		lin_v = Dense(11, name='linear_velocity')(x)
-		ang_v = Dense(5, name='angular_velocity')(x)
-
-		model = Model(main_input, outputs=[ang_v, lin_v])
-		rms = RMSprop()
-		model.compile(loss='mse', optimizer=rms)
-		if(load):
-			print('loading model')
-			model.load_weights(load)
-
-		return model
+	model = Model(main_input, outputs=[ang_v, lin_v])
+	rms = RMSprop()
+	model.compile(loss='mean_squared_error', optimizer=Adam(lr=1e-3), metrics=['mse'])
+	# model.compile(loss='mse', optimizer=rms)
+	if(load):
+		print('loading model...')
+		model.load_weights(load)
+	print(model.summary())
+	return model
 def neural_net_model4(num_players, load=''):
 	if(gpu_enable):
 		with tf.device(device):
@@ -245,7 +223,9 @@ def neural_net_model4(num_players, load=''):
 
 			model = Model(main_input, outputs=[ang_v, lin_v, ang_v2, lin_v2, ang_v3, lin_v3])
 			rms = RMSprop()
-			model.compile(loss='mse', optimizer=rms)
+
+			# model.compile(loss='mse', optimizer=rms)
+			model.compile(Adam(lr=1e-3), metrics=['mse'])
 			if(load):
 				print('loading model')
 				model.load_weights(load)
