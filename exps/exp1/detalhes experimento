@@ -1,0 +1,40 @@
+detalhes do experimento:
+	rede:
+		neural fully connected:
+		input
+		64
+		64, dropout 0.2, relu
+		64, dropout 0.2, relu
+		9, saida
+		loss = mean squared error
+		optimizer 
+
+def neural_net_model2_1(num_players, load=''):
+	model = Sequential()
+	#layer 1
+	my_shape = ((3 + 2*num_players))
+	# my_shape = 5
+	model.add(Dense(
+		64,input_shape=(my_shape,)
+		))
+	model.add(Dense(64))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(64))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+
+	myn = 3*3
+	model.add(Dense(myn))
+	#model.add(Activation('softmax'))
+	
+
+	rms = RMSprop()
+	model.compile(loss='mse', optimizer=rms)
+	if(load):
+		model.load_weights(load)
+
+	return model
+

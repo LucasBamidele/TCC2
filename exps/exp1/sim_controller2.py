@@ -84,7 +84,7 @@ BATCH_SIZE = 5*OBSERVE_TIMES//6 #OBSERVE_TIMES #1000
 
 MAX_DIST = 152
 
-model_name = 'saved_models/mymodel_episodic_v10.h5'
+model_name = 'saved_models/mymodel_episodic_v9.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def dotproduct(v1, v2):
   return sum((a*b) for a, b in zip(v1, v2))

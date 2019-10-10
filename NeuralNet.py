@@ -149,27 +149,55 @@ def neural_net_model(num_players, load=''):
 def neural_net_model2(num_players, load=''):
 	model = Sequential()
 	#layer 1
-	my_shape = ((5 + 8*num_players))
+	my_shape = ((3 + 2*num_players))
 	# my_shape = 5
 	model.add(Dense(
 		64,input_shape=(my_shape,)
 		))
-	model.add(Dense(128))	#128
+	model.add(Dense(40))	#128
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
 
-	model.add(Dense(128))	#128
+	model.add(Dense(40))	#128
 	model.add(Activation('relu'))
 	model.add(Dropout(0.2))
 
 
-	myn = 11*5
+	myn = 3*3
 	model.add(Dense(myn))
 	#model.add(Activation('softmax'))
 	
 
 	rms = RMSprop()
 	#model.compile(loss='categorical_crossentropy', optimizer=rms)
+	model.compile(loss='mse', optimizer=rms)
+	if(load):
+		model.load_weights(load)
+
+	return model
+def neural_net_model2_1(num_players, load=''):
+	model = Sequential()
+	#layer 1
+	my_shape = ((3 + 2*num_players))
+	# my_shape = 5
+	model.add(Dense(
+		64,input_shape=(my_shape,)
+		))
+	model.add(Dense(64))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(64))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+
+	myn = 3*3
+	model.add(Dense(myn))
+	#model.add(Activation('softmax'))
+	
+
+	rms = RMSprop()
 	model.compile(loss='mse', optimizer=rms)
 	if(load):
 		model.load_weights(load)
