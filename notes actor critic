@@ -1,0 +1,5 @@
+notes on Actor critic problems:
+
+training sensitive to hyperparameter tuning
+
+outlier data tended to ruin training
