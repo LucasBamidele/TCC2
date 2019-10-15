@@ -1,0 +1,14 @@
+detalhes experimentos
+
+	tentar usar Double Q learning
+	usando:
+
+	MAX_FRAMES_GAME = 600
+
+	MAX_ANGLE_FRONT = 0.62
+
+	OBSERVE_TIMES = 100#1800#3600 # BUFFER #com 100 funcionou legal
+	MAX_MEMORY_BALL = 30
+
+	MAX_EPISODES = 10
+	já funcionou legal!

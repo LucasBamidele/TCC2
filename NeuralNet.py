@@ -204,6 +204,101 @@ def neural_net_model2_1(num_players, load=''):
 
 	return model
 
+def neural_net_model2_2(num_players, load=''):
+	model = Sequential()
+	#layer 1
+	my_shape = ((3 + 6*num_players))
+	# my_shape = 5
+	model.add(Dense(
+		64,input_shape=(my_shape,)
+		))
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+
+	myn = 3*3
+	model.add(Dense(myn))
+	#model.add(Activation('softmax'))
+	
+
+	adam = Adam(lr=1e-4)
+	model.compile(loss='mse', optimizer=adam)
+	if(load):
+		model.load_weights(load)
+
+	return model
+
+def neural_net_model2_3(num_players, load=''):
+	model = Sequential()
+	#layer 1
+	my_shape = ((3 + 6*num_players))
+	# my_shape = 5
+	model.add(Dense(
+		64,input_shape=(my_shape,)
+		))
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+
+	myn = 3*3
+	model.add(Dense(myn))
+	#model.add(Activation('softmax'))
+	
+
+	adam = Adam(lr=1e-4)
+	model.compile(loss='mse', optimizer=adam)
+	if(load):
+		model.load_weights(load)
+
+	return model
+
+def neural_net_model2_4(num_players, load=''):
+	model = Sequential()
+	#layer 1
+	my_shape = ((3 + 6*num_players))
+	# my_shape = 5
+	model.add(Dense(
+		64,input_shape=(my_shape,)
+		))
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+	model.add(Dense(128))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
+
+
+	myn = 3*3
+	model.add(Dense(myn))
+	#model.add(Activation('softmax'))
+	
+
+	adam = Adam(lr=1e-4)
+	model.compile(loss='mse', optimizer=adam)
+	if(load):
+		model.load_weights(load)
+
+	return model
+
 def neural_net_model2_5(num_players, load=''):
 	my_shape = ((3 + 6*num_players))
 	main_input = Input(shape=(my_shape,), name='main_input')

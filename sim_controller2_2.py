@@ -7,7 +7,6 @@ TODO:
 	work on a better model for cnn and basic ann
 	
 """
-seed = 30
 import numpy as np
 import NeuralNet as nn
 import random
@@ -16,13 +15,7 @@ from collections import deque
 from time import sleep, time
 import sys
 import math
-import LogAndPlot as plotter
-from tensorflow import set_random_seed
 
-#seeding
-np.random.seed(seed)
-random.seed(seed)
-set_random_seed(seed)
 #TODO aceleracao em vez de velocidades
 #trablahar nos hiperparametros
 #aumentar recompensas vs recompensas negativas
@@ -39,8 +32,6 @@ GOAL_REWARD = 500
 PASS_REWARD = 100
 RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
-STUCK_REWARD = -100
-
 GAMMA = 0.4
 MAX_FRAMES = 80000
 ALPHA = 0.7
@@ -64,6 +55,7 @@ MAX_MEMORY_SPEED = 20
 # NB_ANG_ACT = (MAX_ANG_ACCEL*2 +1)
 # NUMBER_OF_ACTIONS = NB_ANG_ACT*NB_LIN_ACT
 NUMBER_OF_ACTIONS = 9
+
 LIN_SPEED_VEC = [50, 0, -30]
 ANG_SPEED_VEC = [3, 0, -3]
 
@@ -83,20 +75,20 @@ MAX_FRAMES_GAME = 600
 
 MAX_ANGLE_FRONT = 0.62
 
-OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
-MAX_MEMORY_BALL = 20
+OBSERVE_TIMES = 100#1800#3600 # BUFFER #com 100 funcionou legal
+MAX_MEMORY_BALL = 30
 
-MAX_EPISODES = 100
+MAX_EPISODES = 50
 
 
-BATCH_SIZE = 2*OBSERVE_TIMES//8 #OBSERVE_TIMES #1000
+BATCH_SIZE = 4*OBSERVE_TIMES//6 #OBSERVE_TIMES #1000
+
 
 MAX_DIST = 152
 
-TAU = 0.4
-file_name = 'mymodel_episodic_big_net'
-model_name = file_name + '.h5'
+TAU = 0.01
 
+model_name = 'mymodel_episodic_v2.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def dotproduct(v1, v2):
   return sum((a*b) for a, b in zip(v1, v2))
@@ -108,19 +100,11 @@ def angle(v1, v2):
   return math.acos(dotproduct(v1, v2) / (length(v1) * length(v2)))
 
 def distance_cool(angle1, angle2):
-	x1 = math.cos(angle1)
-	x2 = math.cos(angle2)
-	y1 = math.sin(angle1)
-	y2 = math.sin(angle2)
-	dot = x1*x2 + y1*y2      # dot product
-	det = x1*y2 - y1*x2      # determinant
-	# v1 = [math.cos(angle1), math.sin(angle1)]
-	# v2 = [math.cos(angle2), math.sin(angle2)]
-
-	# if(v1 == v2):
-	# 	return 0
-	#return angle(v1,v2)
-	return np.arctan2(det,dot)
+	v1 = [math.cos(angle1), math.sin(angle1)]
+	v2 = [math.cos(angle2), math.sin(angle2)]
+	if(v1 == v2):
+		return 0
+	return angle(v1, v2)
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
 
@@ -198,10 +182,6 @@ class SimController(object):
 		self.action_number_lin = None
 		self.times_since_restart = 1
 		self.episodes = 0
-		self.latest_rewards = []
-		self.mean_rewards = []
-		self.log_loss = []
-		self.log_loss_model = []
 		# for angle in range(MIN_ANG_SPEED, MAX_ANG_SPEED+ ANG_STEP, ANG_STEP):
 		# 	for linear in range(MIN_LIN_SPEED, MAX_LIN_SPEED +LIN_STEP, LIN_STEP):
 		# 		self.action_space.append((angle, linear))
@@ -215,17 +195,16 @@ class SimController(object):
 
 		self.action = 0
 		if(only_play or load_model):
-			self.model = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
-			self.target_model = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
+			self.model = nn.neural_net_model2_2(NUMBER_OF_PLAYERS, model_name)
+			self.target_model = nn.neural_net_model2_2(NUMBER_OF_PLAYERS, model_name)
 		else :
-			self.model = nn.neural_net_model2_4(NUMBER_OF_PLAYERS)
-			self.target_model = nn.neural_net_model2_4(NUMBER_OF_PLAYERS)
+			self.model = nn.neural_net_model2_2(NUMBER_OF_PLAYERS)
+			self.target_model = nn.neural_net_model2_2(NUMBER_OF_PLAYERS)
 		self.reward = {
 			'goal': GOAL_REWARD,
 			'pass': PASS_REWARD,
 			'retake': RETAKE_REWARD,
 			'enemy_goal': ENEMY_GOAL_REWARD,
-			'stuck': STUCK_REWARD
 		}
 		self.last_speeds = deque()
 		self.ball_memory = deque()
@@ -234,7 +213,6 @@ class SimController(object):
 		super(SimController, self).__init__()
 
 	def add_speed_memory(self, speed):
-		return
 		if(len(self.last_speeds) >= MAX_MEMORY_SPEED):
 			self.last_speeds.popleft()
 		self.last_speeds.append(speed[:])
@@ -246,25 +224,22 @@ class SimController(object):
 		self.ball_memory.append((ball.body.position[0], ball.body.position[1]))
 
 	def add_player_memory(self, player):
+		return
 		if(len(self.player_memory) >= MAX_MEMORY_BALL):
 			self.player_memory.popleft()
 		self.player_memory.append((player.body.position[0], player.body.position[1], player.body.angle))
 	#TODO
 	def getReward(self, new_state, robot_allies, robot_opponents, ball):
 		reward = -1 #- self.t_hits//30
-		diff_direction = abs(distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body)))
+		diff_direction = distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body))
 		diff_distance = distance_between_bodies(robot_allies[0].body, ball.body)
-		if(diff_direction < 0.01):
-			diff_direction = 0.01
+		# if(diff_direction < 0.01):
+		# 	diff_direction = 0.01
 		if(diff_distance < 1):
 			diff_distance = 1 
 		# print('diff_distance',diff_distance)
 		# print('diff direct', diff_direction)
-		# reward1 = 1/(0.05 + 0.01*diff_distance)
-		# print('reward1', reward1)
-		reward = 10/(0.1 + 0.1*diff_direction) + 10/(0.05 + 0.01*diff_distance)#/(0.1*self.times_since_restart)
-		# print('reward',reward)
-		# reward +=reward1
+		reward += (1/(0.1 + diff_direction) + 1/(0.05 + 0.01*diff_distance))/(0.1*self.times_since_restart)
 		ball_x = ball.body.position[0]
 		if(ball_x <= BALL_MIN_X):
 			reward = self.reward['enemy_goal']
@@ -274,22 +249,22 @@ class SimController(object):
 			reward = self.reward['goal']
 			self.restart = True
 			print('goall!!!!')
+
 		elif(self.isPlayerStuck()):
-			print('stuck!!')
-			#reward -= 30
-			reward = self.reward['stuck']
-			self.restart = True
+			print('stuck')
+			reward -= 30
+			# self.restart = True
 			self.player_memory = deque()
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
 			self.t_hits = 0
 			reward += 200
 		elif(self.times%MAX_FRAMES_GAME == 0 and ball_x < BALL_MAX_X):
-			#self.restart = True
-			reward = -300 + ball_x
-		# elif(self.isSpinning()):
-		# 	print('stuck spinning')
-		# 	reward = reward - 30
-		# 	self.last_speeds = deque()
+			# self.restart = True
+			reward = -300
+		elif(self.isSpinning()):
+			print('stuck spinning')
+			reward = reward - 30
+			self.last_speeds = deque()
 		self.t_hits+=1
 		self.times_since_restart +=1
 		if(self.restart):
@@ -300,7 +275,6 @@ class SimController(object):
 		#reward += 1000/(distance_between_bodies(robot_allies[0].body, ball.body))
 		#print('reward',reward)
 		#evaluate the reward from the game state!
-		self.latest_rewards.append(reward)
 		return reward
 
 	def isSpinning(self):
@@ -322,17 +296,16 @@ class SimController(object):
 
 		#x.pop(left)
 	def target_train(self):
-		model_weights = np.array(self.model.get_weights())
-		target_model_weights = np.array(self.target_model.get_weights())
+		# model_weights = self.model.get_weights()
+		# target_model_weights = self.target_model.get_weights()
+		# weight_list = np.arange(len(model_weights))
+		# target_model_weights[weight_list] = TAU * model_weights[weight_list] + (1 - TAU) * target_model_weights[weight_list]
+		# self.target_model.set_weights(target_model_weights)
+		model_weights = self.model.get_weights()
+		target_model_weights = self.target_model.get_weights()
 		weight_list = np.arange(len(model_weights))
 		target_model_weights[weight_list] = TAU * model_weights[weight_list] + (1 - TAU) * target_model_weights[weight_list]
 		self.target_model.set_weights(target_model_weights)
-		# model_weights = self.model.get_weights()
-		# target_model_weights = self.target_model.get_weights()
-		# #weight_list = np.arange(len(model_weights))
-		# for i in range(len(model_weights)):
-		# 	target_model_weights[i] = TAU * model_weights[i] + (1 - TAU) * target_model_weights[i]
-		# self.target_model.set_weights(target_model_weights)
 
 
 	def isPlayerStuck(self):
@@ -342,7 +315,7 @@ class SimController(object):
 		# y = list(map(lambda x : x[1], self.player_memory))
 		dx = abs(self.player_memory[0][0] - self.player_memory[MAX_MEMORY_BALL-1][0])
 		dy = abs(self.player_memory[0][1] - self.player_memory[MAX_MEMORY_BALL-1][1])
-		dangle = abs(self.player_memory[MAX_MEMORY_BALL-5][2] - self.player_memory[MAX_MEMORY_BALL-1][2])
+		dangle = abs(self.player_memory[MAX_MEMORY_BALL-5][2] - self.player_memory[MAX_MEMORY_BALL-1][0])
 		if(dx < 0.1 and dy < 0.1 and dangle < 0.1):
 			return True
 		return False
@@ -350,7 +323,7 @@ class SimController(object):
 	def playerHitBall(self, robot_allies, robot_opponents, ball):
 		if(robot_allies[0].body.userData == ball.body):
 			robot_allies[0].body.userData = None
-			if(abs(distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body))) < MAX_ANGLE_FRONT):
+			if(distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body)) < MAX_ANGLE_FRONT):
 				print('hit!')
 				return True
 		return False
@@ -372,31 +345,27 @@ class SimController(object):
 			#build batch
 			#batch = random.sample(self.replay_memory, BATCH_SIZE)
 			if(len(self.replay_memory) < BATCH_SIZE):
-				batch = self.replay_memory[:]
+				batch = self.replay_memory
 			else:
-				batch = random.sample(self.replay_memory,BATCH_SIZE)[:]
+				batch = random.sample(self.replay_memory,BATCH_SIZE)
 			t1 = time()
 			x_train, y_train = self.generate_train_from_batch2(batch)
 			elapsed = time() - t1
-			# print('time to batch: ', elapsed*1000, 'ms')
+			print('time to batch: ', elapsed*1000, 'ms')
 			#x_train = np.expand_dims(x_train, axis=2)
-			# print('fitting...')
+			print('fitting...')
 			self.replay_memory = []
 			t1 = time()
 			# self.model.fit(x_train, [y_train,y2_train], batch_size=BATCH_SIZE, epochs=5, verbose=0)
 			#self.model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=20, verbose=0)
 			self.model.train_on_batch(x_train, y_train)
 			elapsed = time() - t1
-			# print('time to fit: ', elapsed*1000, 'ms')
+			print('time to fit: ', elapsed*1000, 'ms')
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
 		if(self.times_since_restart%MAX_FRAMES_GAME==0 or self.restart):
-			self.target_train()
-			self.mean_rewards.append(np.mean(self.latest_rewards[:]))
-			self.latest_rewards = []
 			print('saving and restarting...')
 			print(self.episodes, 'out of ', MAX_EPISODES*10)
-			print('EPSILON: ', max(EPSILON - self.decrease, 0.08))
 			self.episodes+=1
 			self.restart = True
 			self.model.save_weights(model_name)
@@ -406,7 +375,6 @@ class SimController(object):
 		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			print('saving and exiting ...')
 			self.model.save(model_name)
-			plotter.plotRewards(self.mean_rewards, figname=file_name)
 			exit()
 
 	def treatRestart(self):
@@ -517,9 +485,9 @@ class SimController(object):
 		lastinputs = [self.action_number_ang, self.action_number_lin]
 		state = transform_to_state(ally_positions, enemy_positions, ball, lastinputs)
 		self.old_state = state[:]
-		# print('state',state.transpose())
+		#print('state',state.transpose())
 		dec = max(EPSILON - self.decrease, 0.08)
-		# print('EPSILON', dec)
+		#print('EPSILON', dec)
 		if((random.random() < dec or self.times < OBSERVE_TIMES) and not only_play):
 			# action_ang = random.randint(0, (len(ANG_ACCEL_VEC)-1))
 			# action_lin = random.randint(0, (len(LIN_ACCEL_VEC)-1))
@@ -530,7 +498,7 @@ class SimController(object):
 			predicted_qval = self.model.predict(state[:].transpose(), batch_size=1) #checar batch size!!
 			#predicted_qval = self.model.predict(np.expand_dims(state.transpose(),axis=2), batch_size=1) #checar batch size!!
 			action = np.argmax(predicted_qval)
-			#print('val:', predicted_qval)
+			# print('val:', predicted_qval)
 		#self.speed = [ANG_SPEED_VEC[action_ang],LIN_SPEED_VEC[action_lin]]
 		# ang_accel = ANG_ACCEL_VEC[action_ang]
 		# lin_accel = LIN_ACCEL_VEC[action_lin]
@@ -544,12 +512,10 @@ class SimController(object):
 		self.add_speed_memory(self.speed)
 		#print('speed: ', self.speed)
 		(a,b) = self.speed
-		# print('0 OUTPUT')
-		# a,b = 0,0
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		#self.decrease = self.times/MAX_FRAMES#7000000
-		self.decrease = self.episodes/(2*MAX_EPISODES)#*3)
+		self.decrease = 10*self.episodes/(MAX_EPISODES)#*3)
 		# print(self.times, 'out of ', MAX_FRAMES*10)
 		return (allies+enemies)
 
