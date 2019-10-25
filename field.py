@@ -105,9 +105,12 @@ class Field(PygameFramework):
 
     def restart(self):
         for x in range(self.num_allies):
-            random_x = random.randint(-65,5)
-            random_y = random.randint(-50,50)
-            angle = random.random()*2*math.pi
+            random_x = random.randint(-60,-10)
+            random_y = random.randint(-45,45)
+            # angle = random.random()*2*math.pi
+            angle = random.uniform(-math.pi/3, math.pi/3)
+            if(angle < 0):
+                angle += 2*math.pi
             self.robots_allies[x].body.position = (random_x,random_y)
             self.robots_allies[x].body.angle = angle #math.pi/2
         for x in range(self.num_opponents):
