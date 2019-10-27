@@ -111,7 +111,7 @@ MAX_ANGLE_FRONT = 0.62
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 60
 
-MAX_EPISODES = 1000
+MAX_EPISODES = 3000
 
 # use_cuda = torch.cuda.is_available()
 # device   = torch.device("cuda" if use_cuda else "cpu")
@@ -282,7 +282,7 @@ class SimController(object):
 		self.action_number_ang = None
 		self.action_number_lin = None
 		self.times_since_restart = 1
-		self.episodes = 0
+		self.episodes = 10000
 		self.latest_rewards = []
 		self.mean_rewards = []
 		self.log_loss = []
@@ -320,7 +320,6 @@ class SimController(object):
 		self.ball_memory = deque()
 		self.player_memory = deque()
 		self.t_hits = 0
-
 		self.timeout = False
 
 		#ppo
@@ -427,6 +426,7 @@ class SimController(object):
 			robot_allies[0].body.userData = None
 			if(abs(distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body))) < MAX_ANGLE_FRONT):
 				print('hit!')
+				self.t_hits = self.reward_dict['hit']*GAMMA
 				return True
 		return False
 
@@ -477,6 +477,7 @@ class SimController(object):
 		goal_x = MAX_DIST/2
 		reward += 1000*((goal_x- diff_ball)/goal_x)
 		ball_x = ball.body.position[0]
+		reward += self.t_hits
 		if(ball_x <= BALL_MIN_X):
 			reward = self.reward_dict['enemy_goal']
 			self.restart = True
@@ -493,7 +494,6 @@ class SimController(object):
 			self.restart = True
 			self.player_memory = deque()
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
-			self.t_hits = 0
 			reward += self.reward_dict['hit']
 		# elif(self.times%MAX_FRAMES_GAME == 0 and ball_x < BALL_MAX_X):
 		# 	#self.restart = True
@@ -507,7 +507,10 @@ class SimController(object):
 			# reward = self.reward_dict['timeout']
 			self.timeout = True
 			print('timeout!')
-		self.t_hits+=1
+		if(self.t_hits > 1):
+			self.t_hits = GAMMA*self.t_hits
+		else:
+			self.t_hits = 0
 		self.times_since_restart +=1
 		# if(not self.isBallMoving()):
 		# 	reward = reward - 10
@@ -673,9 +676,9 @@ class SimController(object):
 		self.old_state = state[:]
 		predicted_qval = self.actor.predict([state[:].reshape(1,NUM_FEATURES), DUMMY_VALUE, DUMMY_ACTION,dummy_rewards, dummy_pred_values]) #checar batch size!!
 		if(self.episodes%100==0):
-			if(self.episodes > 99):
-				self.play = True
 			print(predicted_qval)
+		if(self.episodes%20==0):
+			self.play = True
 		predicted_action = np.argmax(predicted_qval)
 		self.predicted_action = predicted_qval
 		# print('state',state.transpose())
