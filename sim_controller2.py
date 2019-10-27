@@ -7,7 +7,7 @@ TODO:
 	work on a better model for cnn and basic ann
 	
 """
-seed = 3001
+seed = 4001
 import numpy as np
 from NeuralNet3 import *
 import random
@@ -57,7 +57,7 @@ STUCK_REWARD = -100
 HIT_REWARD = 100
 TIMEOUT_REWARD = 0
 
-GAMMA = 0.95
+GAMMA = 0.93
 MAX_FRAMES = 80000
 ALPHA = 0.7
 EPSILON = 1	#change for 0.1
@@ -97,8 +97,8 @@ LAYER_SIZE = 128
 
 BALL_MAX_X = 76
 BALL_MIN_X = -76
-FEATURE_PLAYER = 4#8
-NUMBER_BALL_FEATURES = 7#5
+FEATURE_PLAYER = 9#8
+NUMBER_BALL_FEATURES = 6#5
 NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 
 LIN_ACCEL_VEC = [i for i in range(-5,6)]
@@ -167,7 +167,9 @@ def distance_cool(angle1, angle2):
 def distance_between_bodies(body1, body2):
 	return math.sqrt((body1.position[0] - body2.position[0])**2  + (body1.position[1] - body2.position[1])**2)
 
-def distance_between_ball_and_goal(body1):
+def distance_between_ball_and_goal(body1, enemy=False):
+	if(enemy):
+		return abs(body1.position[0] + 76)
 	return abs(body1.position[0] - 76)
 #transform an input of robot_allies, robot_opponents, and ball to a valid array
 def angle_between_bodies(body1, body2):
@@ -189,9 +191,12 @@ def angle_between_bodies(body1, body2):
 
 	return math.atan(())
 
-def angle_between_body_and_goal(body1):
+def angle_between_body_and_goal(body1, enemy=False):
+	bla= 76
+	if(enemy):
+		bla = -76
 	dx = body1.position[0] - 0
-	dy = body1.position[1] - 76
+	dy = body1.position[1] - bla
 	if(dx == 0):
 		return (math.pi/2)
 	if(dy == 0):
@@ -215,24 +220,24 @@ def scale(number, max_s, angle=False):
 def scale2(number, max_s, min_s=0, angle=False):
 	a =  2*(number - min_s)/(max_s-min_s) - 1
 	return round(a, 2)
-def transform_to_state(robot_allies, robot_opponents, ball, inputs=None):
+def transform_to_state(robot_allies, robot_opponents, ball, inputs=None, enemy=False):
 	state = []
 	state.append(scale(ball.body.position[0], 78))
 	state.append(scale(ball.body.position[1], 61))
-	state.append(scale2(angle_between_body_and_goal(ball.body), 152))
-	# state.append(scale(ball.body.linearVelocity[0], 50))
-	# state.append(scale(ball.body.linearVelocity[1], 50))
-	state.append(scale2(distance_between_ball_and_goal(ball.body),152))
+	state.append(scale2(angle_between_body_and_goal(ball.body, enemy), 152))
+	state.append(scale(ball.body.linearVelocity[0], 50))
+	state.append(scale(ball.body.linearVelocity[1], 50))
+	state.append(scale2(distance_between_ball_and_goal(ball.body, enemy),152))
 	for a in range(NUMBER_OF_PLAYERS):
 		state.append(scale(robot_allies[a].body.position[0],76))
 		state.append(scale(robot_allies[a].body.position[1],60))
 		state.append(scale2(robot_allies[a].body.angle,2*math.pi))
-		# state.append(scale(robot_allies[a].body.linearVelocity[0],50))
-		# state.append(scale(robot_allies[a].body.linearVelocity[1],50))
-		# state.append(scale(robot_allies[a].body.angularVelocity, 6))
+		state.append(scale(robot_allies[a].body.linearVelocity[0],50))
+		state.append(scale(robot_allies[a].body.linearVelocity[1],50))
+		state.append(scale(robot_allies[a].body.angularVelocity, 6))
 		state.append(scale2(distance_between_bodies(robot_allies[a].body, ball.body), 152))
 		state.append(scale2(angle_between_bodies(robot_allies[a].body, ball.body),2*math.pi))
-		state.append(scale2(angle_between_body_and_goal(robot_allies[a].body), 152))
+		# state.append(scale2(angle_between_body_and_goal(robot_allies[a].body, enemy), 152))
 		#state.append(scale(distance_cool(robot_allies[a].body.angle, angle_between_bodies(robot_allies[a].body, ball.body)),math.pi))
 		
 		# state.append(distance_between_bodies(robot_allies[a].body, ball.body))
@@ -270,7 +275,8 @@ def create_action_space():
 
 class SimController(object):
 	"""docstring for SimController"""
-	def __init__(self):
+	def __init__(self, isEnemy = False):
+		self.isEnemy = isEnemy
 		self.decrease = 0.0
 		self.isGoal = False
 		self.restart = False
@@ -282,7 +288,7 @@ class SimController(object):
 		self.action_number_ang = None
 		self.action_number_lin = None
 		self.times_since_restart = 1
-		self.episodes = 10000
+		self.episodes = 0
 		self.latest_rewards = []
 		self.mean_rewards = []
 		self.log_loss = []
@@ -305,7 +311,7 @@ class SimController(object):
 			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name2)
 			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name)
 		else :
-			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, 'saved_models/Exp1/9999critmymodel_ppo3.h5')
+			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
 			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
 		self.reward_dict = {
 			'goal': GOAL_REWARD,
@@ -335,7 +341,7 @@ class SimController(object):
 		super(SimController, self).__init__()
 
 
-	def compute_gae(self, next_value, rewards, masks, values, gamma=0.99, tau=0.95):
+	def compute_gae(self, next_value, rewards, masks, values, gamma=GAMMA, tau=0.95):
 		# values = values + [next_value]
 		values = np.append(values, next_value, 0)
 		gae = 0
@@ -442,8 +448,11 @@ class SimController(object):
 		self.play = False
 		if(self.episodes%MAX_EPISODES==(MAX_EPISODES-1)):
 			print('saving...')
-			self.actor.save_weights(_dir + str(self.episodes) +model_name)
-			self.critic.save_weights(_dir + str(self.episodes) +model_name2)
+			enemy_sv = ''
+			if(self.isEnemy):
+				enemy_sv = 'enemy-'
+			self.actor.save_weights(_dir + str(self.episodes) + enemy_sv +model_name)
+			self.critic.save_weights(_dir + str(self.episodes) + enemy_sv + model_name2)
 		# self.latest_rewards = []
 
 	def isTerminalState(self,reward):
@@ -460,7 +469,7 @@ class SimController(object):
 	#TODO
 	def getReward(self, new_state, robot_allies, robot_opponents, ball):
 		reward = 0 #- self.t_hits//30
-		diff_ball = distance_between_ball_and_goal(ball.body)
+		diff_ball = distance_between_ball_and_goal(ball.body, self.isEnemy)
 		diff_direction = abs(distance_cool(robot_allies[0].body.angle, angle_between_bodies(robot_allies[0].body, ball.body)))
 		diff_distance = distance_between_bodies(robot_allies[0].body, ball.body)
 		if(diff_direction < 0.01):
@@ -482,16 +491,26 @@ class SimController(object):
 			reward = self.reward_dict['enemy_goal']
 			self.restart = True
 			self.isGoal = True
+			if(self.isEnemy):
+				reward = self.reward_dict['goal']
+				self.restart = True
+				self.isGoal = False
+				print('enemy goal!!')
 		elif(ball_x >= BALL_MAX_X):
 			self.isGoal = True
 			reward = self.reward_dict['goal']
 			self.restart = True
-			print('goall!!!!')
+			print('ally goall!!!!')
+			if(self.isEnemy):
+				self.isGoal = False
+				reward = self.reward_dict['enemy_goal']
+				self.restart = True
+				print('ally goall!!!!')
 		elif(self.isPlayerStuck()):
 			print('stuck!!')
 			#reward -= 30
 			# reward = self.reward_dict['stuck']
-			self.restart = True
+			# self.restart = True
 			self.player_memory = deque()
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
 			reward += self.reward_dict['hit']
@@ -619,8 +638,11 @@ class SimController(object):
 		self.times+=1
 		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			print('saving and exiting ...')
-			self.actor.save(model_name)
-			self.critic.save_weights(file_name_crit)
+			enemy_sv = ''
+			if(self.isEnemy):
+				enemy_sv = 'enemy-'
+			self.actor.save(enemy_sv + model_name)
+			self.critic.save_weights(enemy_sv + file_name_crit)
 
 			# plotter.plotRewards(self.mean_rewards, figname=file_name)
 			exit()
@@ -677,7 +699,7 @@ class SimController(object):
 		predicted_qval = self.actor.predict([state[:].reshape(1,NUM_FEATURES), DUMMY_VALUE, DUMMY_ACTION,dummy_rewards, dummy_pred_values]) #checar batch size!!
 		if(self.episodes%100==0):
 			print(predicted_qval)
-		if(self.episodes%20==0):
+		if(self.episodes%10==0 and self.episodes > 100):
 			self.play = True
 		predicted_action = np.argmax(predicted_qval)
 		self.predicted_action = predicted_qval
@@ -703,6 +725,8 @@ class SimController(object):
 		# a,b = 0,0
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
+		if(self.isEnemy):
+			return (enemies+allies)
 		# self.decrease = self.episodes/(2*MAX_EPISODES)
 		return (allies+enemies)
 

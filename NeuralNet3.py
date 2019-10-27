@@ -6,15 +6,15 @@ from keras.optimizers import Adam
 
 import numba as nb
 
-HIDDEN_SIZE_ACTOR = 512
+HIDDEN_SIZE_ACTOR = 1024
 HIDDEN_SIZE_CRITIC = 256
-LR = 6e-8
+LR = 1e-8
 LR2 = 1e-4
 LOSS_CLIPPING = 0.2
 ENTROPY_LOSS = -1e-4
 C1 = 0.5
 NUM_LAYERS = 2
-NUM_INPUTS = 11
+NUM_INPUTS = 15
 NUM_OUTPUTS = 9 
 
 @nb.jit
@@ -47,7 +47,7 @@ def Actor(num_inputs, num_outputs, hidden_layer, load=''):
 	old_prediction = Input(shape=(NUM_OUTPUTS,))
 
 	x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(state_input)
-	# x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(x)
+	x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(x)
 	x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(x)
 	out_actions = Dense(NUM_OUTPUTS, activation='softmax', name='output')(x)
 

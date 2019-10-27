@@ -29,7 +29,7 @@
 # Import pygame and libraries
 from pygame.locals import *
 from random import randrange
-from field import *
+from field_multi import *
 import os
 import sys
 window = True
@@ -94,7 +94,7 @@ dt = 1 / FPS
 
 # Global variables
 num_allies = 1
-num_opponents = 0
+num_opponents = 1
 team_color = 0  # blue   = 0
                 # yellow = 1
 publish_topic = 'vision_output_topic'
