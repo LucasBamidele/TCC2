@@ -176,7 +176,7 @@ class Field(PygameFramework):
         if(only_play and self.ball.body.position[0] >= BALL_MAX_X):
             self.controller.restart = True
             print('goall ally!')
-        if(self.controller.restart):
+        if(self.controller.restart and self.controller2.restart):
             self.controller.restart = False
             self.controller2.restart = False
             self.restart()

@@ -49,10 +49,10 @@ if(len(sys.argv) > 2):
 
 
 
-GOAL_REWARD = 1200
+GOAL_REWARD = 2000
 PASS_REWARD = 100
 RETAKE_REWARD = 100
-ENEMY_GOAL_REWARD = -100
+ENEMY_GOAL_REWARD = -2000
 STUCK_REWARD = -100
 HIT_REWARD = 100
 TIMEOUT_REWARD = 0
@@ -104,14 +104,14 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 LIN_ACCEL_VEC = [i for i in range(-5,6)]
 ANG_ACCEL_VEC = [i for i in range(-2, 3)]
 
-MAX_FRAMES_GAME = 390
+MAX_FRAMES_GAME = 500
 BUFFER_SIZE = MAX_FRAMES_GAME
 MAX_ANGLE_FRONT = 0.62
 
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 60
 
-MAX_EPISODES = 3000
+MAX_EPISODES = 50000
 
 # use_cuda = torch.cuda.is_available()
 # device   = torch.device("cuda" if use_cuda else "cpu")
@@ -122,7 +122,7 @@ DUMMY_ACTION, DUMMY_VALUE, dummy_rewards, dummy_pred_values= np.zeros((1, NUMBER
 
 
 BATCH_SIZE = MAX_FRAMES_GAME #OBSERVE_TIMES #1000
-END_GAME_THRESHOLD = MAX_FRAMES_GAME*1.5
+END_GAME_THRESHOLD = MAX_FRAMES_GAME*3
 
 MAX_DIST = 152
 
@@ -308,8 +308,8 @@ class SimController(object):
 
 		self.action = 0
 		if(only_play or load_model):
-			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name2)
-			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name)
+			#self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name2)
+			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, 'saved_models/499999enemy-mymodel_ppo3.h5')#_dir + model_name)
 		else :
 			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
 			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
@@ -456,7 +456,9 @@ class SimController(object):
 		# self.latest_rewards = []
 
 	def isTerminalState(self,reward):
-		if(reward == self.reward_dict['timeout'] or reward == self.reward_dict['goal'] or reward == self.reward_dict['enemy_goal']):
+		# if(reward == self.reward_dict['timeout'] or reward == self.reward_dict['goal'] or reward == self.reward_dict['enemy_goal']):
+		# 	return True
+		if(self.isGoal):
 			return True
 		if(self.timeout):
 			return True
@@ -494,7 +496,6 @@ class SimController(object):
 			if(self.isEnemy):
 				reward = self.reward_dict['goal']
 				self.restart = True
-				self.isGoal = False
 				print('enemy goal!!')
 		elif(ball_x >= BALL_MAX_X):
 			self.isGoal = True
@@ -502,10 +503,7 @@ class SimController(object):
 			self.restart = True
 			print('ally goall!!!!')
 			if(self.isEnemy):
-				self.isGoal = False
 				reward = self.reward_dict['enemy_goal']
-				self.restart = True
-				print('ally goall!!!!')
 		elif(self.isPlayerStuck()):
 			print('stuck!!')
 			#reward -= 30
@@ -601,14 +599,16 @@ class SimController(object):
 			pred_values = self.critic.predict(obs)
 			next_value = self.critic.predict(new_state.transpose())
 			returns_ = np.array(self.compute_gae(next_value, reward, mask, pred_values))
-			print(returns_[-50:].transpose())
-			print(pred_values[-50:].transpose())
+			# print(returns_[-50:].transpose())
+			# print(pred_values[-50:].transpose())
 			advantage = returns_ - pred_values
 			advantage_norm = (advantage - np.mean(advantage)) / (np.std(advantage) + 1e-10)
-			critic_loss = self.critic.fit([obs], [returns_], batch_size=b_size, shuffle=False, epochs=EPOCHS*3, verbose=False)
+			init_t = time()
+			critic_loss = self.critic.fit([obs], [returns_], batch_size=b_size, shuffle=False, epochs=EPOCHS*2, verbose=False)
 			print('critic loss: ', critic_loss.history['loss'][-1])
 			actor_loss = self.actor.fit([obs, advantage_norm, old_prediction, returns_, pred_values], [action], batch_size=b_size, shuffle=False, epochs=EPOCHS, verbose=False)
 			print('actor loss: ', actor_loss.history['loss'][-1])
+			print('time to fit: ', (time() - init_t))
 			# for _ in range(EPOCHS*3):
 			# 	critic_loss = self.critic.train_on_batch([obs], [returns_])
 			# print('critic loss: ', critic_loss.history['loss'][-1])
@@ -625,9 +625,12 @@ class SimController(object):
 
 
 			self.mean_rewards.append(np.mean(self.latest_rewards[:]))
+			eny_print = ''
+			if(self.isEnemy):
+				eny_print = 'enemy '
 			print('restarting...')
 			self.restart = True
-			print(self.episodes, 'out of ', MAX_EPISODES*10)
+			print(eny_print,self.episodes, ' out of ', MAX_EPISODES*10)
 
 		# else :
 		# 	self.val = False
@@ -697,8 +700,6 @@ class SimController(object):
 		state = transform_to_state(ally_positions, enemy_positions, ball, lastinputs)
 		self.old_state = state[:]
 		predicted_qval = self.actor.predict([state[:].reshape(1,NUM_FEATURES), DUMMY_VALUE, DUMMY_ACTION,dummy_rewards, dummy_pred_values]) #checar batch size!!
-		if(self.episodes%100==0):
-			print(predicted_qval)
 		if(self.episodes%10==0 and self.episodes > 100):
 			self.play = True
 		predicted_action = np.argmax(predicted_qval)
