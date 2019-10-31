@@ -21,6 +21,7 @@ import random
 import ContactListener as cl
 
 BALL_MAX_X = 76
+BALL_MIN_X = -76
 only_play = False
 if(len(sys.argv)>1):
     if(sys.argv[1]=='play'):
@@ -34,7 +35,8 @@ class Field(PygameFramework):
     def __init__(self, num_allies, num_opponents, team_color, field_side, publish_topic):
         PygameFramework.__init__(self)
         self.controller = sc.SimController()
-        #self.controller2 = sc.SimController(enemy=True)
+        self.controller2 = sc.SimController(True)
+        self.controller2.can_train = False
         self.ang_and_lin_speed = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
         #RunRos.__init__(self, publish_topic)
         # Top-down -- no gravity in the screen plane
@@ -97,23 +99,29 @@ class Field(PygameFramework):
 
     def update_speeds(self):
         speed1 = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
-        if(speed1):
-            self.ang_and_lin_speed = speed1
+        speed2 = self.controller2.sync_control_centrallized(self.robots_opponents, self.robots_allies, self.ball)
+        if(speed1 and speed2):
+            self.ang_and_lin_speed = speed1[:5] + speed2[5:]
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
+        self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
 
     def restart(self):
         for x in range(self.num_allies):
-            random_x = random.randint(-65,5)
+            random_x = random.randint(-55,-10)
             random_y = random.randint(-50,50)
-            angle = random.random()*2*math.pi
+            # angle = random.random()*2*math.pi
+            angle = random.uniform(-math.pi/3, math.pi/3)
+            if(angle < 0):
+                angle += 2*math.pi
             self.robots_allies[x].body.position = (random_x,random_y)
             self.robots_allies[x].body.angle = angle #math.pi/2
         for x in range(self.num_opponents):
-            random_x = random.randint(5,65)
+            random_x = random.randint(10,55)
             random_y = random.randint(-50,50)
-            angle = random.random()*2*math.pi
+            # angle = random.random()*2*math.pi
+            angle = random.uniform(2*math.pi/3, 4*math.pi/3)
             self.robots_opponents[x].body.position = (random_x,random_y)
             self.robots_opponents[x].body.angle = angle #math.pi/2
 
@@ -166,12 +174,18 @@ class Field(PygameFramework):
         self.update_phisics(settings)
         if(not only_play):
             self.compute_learning()
-        if(only_play and self.ball.body.position[0] >= BALL_MAX_X):
+        if(only_play and (self.ball.body.position[0] >= BALL_MAX_X) or self.ball.body.position[0] <= BALL_MIN_X):
             self.controller.restart = True
+            self.controller2.restart = True
             print('goall!!!!')
-        if(self.controller.restart):
-            self.controller.times_since_restart = 1
+        if(self.controller.restart and self.controller2.restart):
+            self.controller.treatRestart()
+            self.controller2.treatRestart()
             self.controller.restart = False
+            self.controller2.restart = False
+            self.controller.episodes+=1
+            self.controller2.episodes+=1
+
             self.restart()
         super(Field, self).Step(settings)
 
@@ -179,5 +193,8 @@ class Field(PygameFramework):
             self.robots_allies[x].update_colors()
         for x in range(self.num_opponents):
             self.robots_opponents[x].update_colors()
+        if(self.controller.episodes%50==0 and self.controller.episodes > 100):
+            self.controller.can_train = not self.controller.can_train
+            self.controller2.can_train = not self.controller2.can_train
         # p = ((0.2,0.8,1.2, 1.6), (0.2,0.8,1.2, 1.6))
         #self.trajectory.update(self.trajectory_x, self.trajectory_y)
