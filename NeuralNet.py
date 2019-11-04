@@ -292,7 +292,7 @@ def neural_net_model2_4(num_players, load=''):
 	model.add(Activation('softmax'))
 	
 
-	adam = Adam(lr=5e-5)
+	adam = Adam(lr=6e-5)
 	model.compile(loss='mse', optimizer=adam)
 	if(load):
 		model.load_weights(load)
@@ -300,27 +300,35 @@ def neural_net_model2_4(num_players, load=''):
 	return model
 
 def neural_net_model2_5(num_players, load=''):
-	my_shape = ((3 + 6*num_players))
-	main_input = Input(shape=(my_shape,), name='main_input')
+	model = Sequential()
+	#layer 1
+	my_shape = ((5 + 9*num_players))
+	# my_shape = 5
+	model.add(Dense(
+		128,input_shape=(my_shape,)
+		))
+	model.add(Dense(512))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
 
-	x = Dense(32, activation='relu', kernel_initializer='lecun_uniform')(main_input)
-	x = Dropout(0.3)(x)
-	x = Dense(32, activation='relu', kernel_initializer='lecun_uniform')(x)
-	x = Dropout(0.3)(x)
-	x = Dense(32, activation='relu', kernel_initializer='lecun_uniform')(x)
-	x = Dropout(0.3)(x)
+	model.add(Dense(512))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
 
-	lin_v = Dense(3, name='linear_velocity')(x)
-	ang_v = Dense(3, name='angular_velocity')(x)
+	model.add(Dense(512))	#128
+	model.add(Activation('relu'))
+	model.add(Dropout(0.2))
 
-	model = Model(main_input, outputs=[ang_v, lin_v])
-	rms = RMSprop()
-	model.compile(loss='mean_squared_error', optimizer=Adam(lr=1e-3), metrics=['mse'])
-	# model.compile(loss='mse', optimizer=rms)
+
+	myn = 9
+	model.add(Dense(myn))
+	model.add(Activation('softmax'))
+	
+
+	adam = Adam(lr=7e-5)
+	model.compile(loss='mse', optimizer=adam)
 	if(load):
-		print('loading model...')
 		model.load_weights(load)
-	print(model.summary())
 	return model
 def neural_net_model4(num_players, load=''):
 	if(gpu_enable):
@@ -348,7 +356,7 @@ def neural_net_model4(num_players, load=''):
 			rms = RMSprop()
 
 			# model.compile(loss='mse', optimizer=rms)
-			model.compile(Adam(lr=1e-3), metrics=['mse'])
+			model.compile(Adam(lr=5e-3), metrics=['mse'])
 			if(load):
 				print('loading model')
 				model.load_weights(load)

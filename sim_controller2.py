@@ -41,7 +41,7 @@ RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 STUCK_REWARD = -100
 
-GAMMA = 0.9
+GAMMA = 0.8
 MAX_FRAMES = 80000
 ALPHA = 0.7
 EPSILON = 1	#change for 0.1
@@ -80,22 +80,30 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 NUMBER_OF_ACTIONS = 9#*NUMBER_OF_PLAYERS
 LIN_ACCEL_VEC = [i for i in range(-5,6)]
 ANG_ACCEL_VEC = [i for i in range(-2, 3)]
+action_space = []
+for angle in ANG_SPEED_VEC:
+	for linear in LIN_SPEED_VEC:
+		action_space.append((angle, linear))
 
-MAX_FRAMES_GAME = 390
+LIMIT_MEMORY = 10000
+MAX_FRAMES_GAME = 400
 
 MAX_ANGLE_FRONT = 0.62
 
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 20
 
-MAX_EPISODES = 1000
-
+MAX_EPISODES = 10
+SAMPLE = 4
 
 BATCH_SIZE = 4*OBSERVE_TIMES//8 #OBSERVE_TIMES #1000
+
 
 MAX_DIST = 152
 
 TAU = 0.4
+_dir = ''
+# _dir = 'saved_models/Exp2/'
 file_name = 'mymodel_episodic_big_net'
 model_name = file_name + '.h5'
 
@@ -177,7 +185,6 @@ def transform_to_state(robot_allies, robot_opponents, ball, inputs=None, enemy=F
 		state.append(scale(distance_between_bodies(robot_allies[a].body, ball.body), 152))
 		state.append(scale(angle_between_bodies(robot_allies[a].body, ball.body),2*math.pi))
 		#state.append(scale(distance_cool(robot_allies[a].body.angle, angle_between_bodies(robot_allies[a].body, ball.body)),math.pi))
-		
 		# state.append(distance_between_bodies(robot_allies[a].body, ball.body))
 		# state.append(angle_between_bodies(robot_allies[a].body, ball.body))
 		state.append(distance_cool(robot_allies[a].body.angle, angle_between_bodies(robot_allies[a].body, ball.body)))
@@ -203,7 +210,7 @@ class SimController(object):
 		self.restart = False
 		self.times = 1
 		self.iterations = 0
-		self.replay_memory = []
+		self.replay_memory = deque()
 		self.old_state = None
 		self.action_space = []
 		self.action_number_ang = None
@@ -218,34 +225,31 @@ class SimController(object):
 		# for angle in range(MIN_ANG_SPEED, MAX_ANG_SPEED+ ANG_STEP, ANG_STEP):
 		# 	for linear in range(MIN_LIN_SPEED, MAX_LIN_SPEED +LIN_STEP, LIN_STEP):
 		# 		self.action_space.append((angle, linear))
-		for angle in ANG_SPEED_VEC:
-			for linear in LIN_SPEED_VEC:
-				self.action_space.append((angle, linear))
 		# for angle in range(-MAX_ANG_ACCEL, MAX_ANG_ACCEL+ 1):
 		# 	for linear in range(-MAX_LIN_ACCEL, MAX_LIN_ACCEL +1):
 		# 		self.action_space.append((angle, linear))
 		self.speed = [0,0]
-
-		self.action = 0
-		self.action2 =0
-		self.action3 = 0
+		self.t_reward = 0
+		self.action = 5
+		self.action2 = 5
+		self.action3 = 5
 		enemy_string = ''
 		if(self.isEnemy):
 			enemy_string = 'enemy_'
 		if(only_play or load_model):
-			self.model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'1_'+model_name)
+			self.model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS, _dir + enemy_string+'1_'+model_name)
 			# self.target_model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy+'1_'+model_name)
-			self.model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'2_'+model_name)
+			self.model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS, _dir + enemy_string+'2_'+model_name)
 			# self.target_model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
-			self.model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'3_'+model_name)
+			self.model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS, _dir + enemy_string+'3_'+model_name)
 			# self.target_model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
 		else :
-			self.model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'1_'+model_name)
-			self.target_model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'1_'+model_name)
-			self.model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'2_'+model_name)
-			self.target_model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'2_'+model_name)
-			self.model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'3_'+model_name)
-			self.target_model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'3_'+model_name)
+			self.model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'1_'+model_name)
+			self.target_model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'1_'+model_name)
+			self.model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'2_'+model_name)
+			self.target_model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'2_'+model_name)
+			self.model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'3_'+model_name)
+			self.target_model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'3_'+model_name)
 		self.reward = {
 			'goal': GOAL_REWARD,
 			'pass': PASS_REWARD,
@@ -277,8 +281,11 @@ class SimController(object):
 		self.player_memory.append((player.body.position[0], player.body.position[1], player.body.angle))
 	#TODO
 
-	def transform_reward(self):
-		for j in range(len(self.replay_memory) - 2, -1, -1):
+	def transform_reward(self, t=0):
+		b = len(self.replay_memory) - t - 1
+		if(t==0):
+			b = -1
+		for j in range(len(self.replay_memory) - 2, b, -1):
 			self.replay_memory[j][4] += self.replay_memory[j + 1][4] * GAMMA
 
 	def getReward(self, new_state, robot_allies, robot_opponents, ball):
@@ -366,9 +373,9 @@ class SimController(object):
 
 	def target_train(self):
 		if(not self.can_train):
-			print('not training!')
+			# print('not training!')
 			return
-		print('training!')
+		# print('training!')
 		model_weights = np.array(self.model1.get_weights())
 		target_model_weights = np.array(self.target_model1.get_weights())
 		weight_list = np.arange(len(model_weights))
@@ -418,21 +425,22 @@ class SimController(object):
 
 
 	def compute(self, robot_allies, robot_opponents, ball):
-		if(self.times%6 != 0 and not only_play):
+		if(self.times%SAMPLE != 0 and not only_play):
 			self.times+=1
 			return
 		new_state = transform_to_state(robot_allies, robot_opponents, ball, [self.action_number_ang, self.action_number_lin])
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
-
 		#print('reward: ',reward)
-		if(len(self.replay_memory) < OBSERVE_TIMES-1 and (not self.restart)):
+		if((self.times_since_restart%OBSERVE_TIMES!=0 or self.times_since_restart < 2) and (not self.restart)):
 			self.replay_memory.append([self.old_state[:], self.action, self.action2, self.action3, reward, new_state[:]])
+			self.t_reward+=1
 		else :
 			self.replay_memory.append([self.old_state[:], self.action, self.action2, self.action3, reward, new_state[:]])
+			self.t_reward+=1
 			#exit()
 			#build batch
 			#batch = random.sample(self.replay_memory, BATCH_SIZE)
-			self.transform_reward()
+			self.transform_reward(self.t_reward)
 			if(len(self.replay_memory) < BATCH_SIZE):
 				batch = self.replay_memory[:]
 			else:
@@ -443,7 +451,10 @@ class SimController(object):
 			# print('time to batch: ', elapsed*1000, 'ms')
 			#x_train = np.expand_dims(x_train, axis=2)
 			# print('fitting...')
-			self.replay_memory = []
+			# self.replay_memory = self.replay_memory[10:]
+			for _ in range(10):
+				self.replay_memory.popleft()
+			self.t_reward = 0
 			t1 = time()
 			# self.model.fit(x_train, [y_train,y2_train], batch_size=BATCH_SIZE, epochs=5, verbose=0)
 			#self.model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=20, verbose=0)
@@ -457,21 +468,12 @@ class SimController(object):
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
 		if(self.times_since_restart >= MAX_FRAMES_GAME or self.restart):
-			self.target_train()
-			self.mean_rewards.append(np.mean(self.latest_rewards[:]))
-			self.latest_rewards = []
-			print('saving and restarting...')
-			print(self.episodes, 'out of ', MAX_EPISODES*10)
-			print('EPSILON: ', max(EPSILON - self.decrease, 0.08))
-			self.restart = True
+			self.save_and_restart()
+		self.times+=1
+		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			enemy = ''
 			if(self.isEnemy):
 				enemy = 'enemy_'
-			self.model1.save_weights(enemy+'1_'+model_name)
-			self.model2.save_weights(enemy+'2_'+model_name)
-			self.model3.save_weights(enemy+'3_'+model_name)
-		self.times+=1
-		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			print('saving and exiting ...')
 			self.model1.save_weights(enemy+'1_'+model_name)
 			self.model2.save_weights(enemy+'2_'+model_name)
@@ -479,9 +481,29 @@ class SimController(object):
 			plotter.plotRewards(self.mean_rewards, figname=file_name)
 			exit()
 
+	def save_and_restart(self):
+		if(len(self.replay_memory) > LIMIT_MEMORY):
+			print('popping!')
+			for _ in range(LIMIT_MEMORY//4):
+				self.replay_memory.popleft()
+		if(self.episodes%50==0 and self.episodes > 50):
+			self.target_train()
+		self.mean_rewards.append(np.mean(self.latest_rewards[:]))
+		self.latest_rewards = []
+		print('saving and restarting...')
+		print(self.episodes, 'out of ', MAX_EPISODES*10)
+		print('EPSILON: ', max(EPSILON - self.decrease, 0.08))
+		self.restart = True
+		enemy = ''
+		if(self.isEnemy):
+			enemy = 'enemy_'
+		self.model1.save_weights(enemy+'1_'+model_name)
+		self.model2.save_weights(enemy+'2_'+model_name)
+		self.model3.save_weights(enemy+'3_'+model_name)
+
 	def treatRestart(self):
 		self.times_since_restart = 1
-		self.replay_memory = []
+		# self.replay_memory = []
 		self.last_speeds = deque()
 		self.ball_memory = deque()
 		self.player_memory = deque()
@@ -570,7 +592,7 @@ class SimController(object):
 			y = []
 			y[:] = old_qval[0][:]
 			old_qval_action = y[0][action_number_ang]
-			y[0][action_number_ang] = (1-decay)*old_qval_action + decay*update
+			y[0][action_number_ang] = update
 
 			y2 = []
 			y2[:] = old_qval[1][:]
@@ -600,12 +622,13 @@ class SimController(object):
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		if(only_play):
 			self.times +=1
-		if(self.times%6!=0): #and not only_play):
+		if(self.times%SAMPLE!=0): #and not only_play):
 			return
 		# lastinputs = [self.action_number_ang, self.action_number_lin]
-		state = transform_to_state(ally_positions, enemy_positions, ball, None)
+		acts = [self.action, self.action2, self.action3]
+		state = transform_to_state(ally_positions, enemy_positions, ball, acts)
 		self.old_state = state[:]
-		print('state',state.transpose())
+		# print('state',state.transpose())
 		# dec = max(EPSILON - self.decrease, 0.08)
 		# print('EPSILON', dec)
 		predicted_qval = self.model1.predict(state[:].transpose(), batch_size=1) #checar batch size!!
@@ -619,7 +642,7 @@ class SimController(object):
 			action2 = np.argmax(predicted_qval2)
 			action3 = np.argmax(predicted_qval3)
 		# self.speed = self.action_space[action]
-		speed1, speed2, speed3 = self.action_space[action1], self.action_space[action2], self.action_space[action3]
+		speed1, speed2, speed3 = action_space[action1], action_space[action2], action_space[action3]
 		self.action = action1
 		self.action2 = action2
 		self.action3 = action3

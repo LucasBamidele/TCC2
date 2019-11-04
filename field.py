@@ -109,8 +109,8 @@ class Field(PygameFramework):
 
     def restart(self):
         for x in range(self.num_allies):
-            random_x = random.randint(-55,-10)
-            random_y = random.randint(-50,50)
+            random_x = random.randint(-55,-15)
+            random_y = random.randint(-30,30)
             # angle = random.random()*2*math.pi
             angle = random.uniform(-math.pi/3, math.pi/3)
             if(angle < 0):
@@ -193,7 +193,7 @@ class Field(PygameFramework):
             self.robots_allies[x].update_colors()
         for x in range(self.num_opponents):
             self.robots_opponents[x].update_colors()
-        if(self.controller.episodes%50==0 and self.controller.episodes > 100):
+        if(self.controller.episodes%50==0 and self.controller.episodes > 50):
             self.controller.can_train = not self.controller.can_train
             self.controller2.can_train = not self.controller2.can_train
         # p = ((0.2,0.8,1.2, 1.6), (0.2,0.8,1.2, 1.6))
