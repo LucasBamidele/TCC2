@@ -39,9 +39,12 @@ from constants import *
 from Box2D import (b2Color, b2PolygonShape)
 # import rospy
 window = True
+p = 100000
 if(len(sys.argv) > 1):
     if(sys.argv[1] == 'no_window' or sys.argv[1]=='load_no_window'):
         window = False
+    if(sys.argv[1] == 'play'):
+        p = 30
 
 try:
     import pygame_sdl2
@@ -348,7 +351,8 @@ class PygameFramework(FrameworkBase):
 
                 pygame.display.flip()
                 # clock.tick(self.settings.hz)
-                clock.tick(100000)
+
+                clock.tick(p)
                 self.fps = clock.get_fps()
                 #print('fps: ',int(self.fps))
                 

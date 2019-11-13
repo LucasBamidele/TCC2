@@ -300,8 +300,8 @@ def start_menu():
                 exit()
 
         # Main menu
-        #main_menu.mainloop(events)
+        # main_menu.mainloop(events)
         Field(num_allies, num_opponents, team_color, field_side, publish_topic)
 
         # Flip surface
-        #pygame.display.flip()
+        # pygame.display.flip()

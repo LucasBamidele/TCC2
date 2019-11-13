@@ -36,6 +36,7 @@ class Field(PygameFramework):
         PygameFramework.__init__(self)
         self.controller = sc.SimController()
         self.controller2 = sc.SimController(True)
+        self.controller2.restart = True
         self.controller2.can_train = False
         self.ang_and_lin_speed = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
         #RunRos.__init__(self, publish_topic)
@@ -105,7 +106,7 @@ class Field(PygameFramework):
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
-        self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
+        # self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
 
     def restart(self):
         for x in range(self.num_allies):
@@ -182,7 +183,7 @@ class Field(PygameFramework):
             self.controller.treatRestart()
             self.controller2.treatRestart()
             self.controller.restart = False
-            self.controller2.restart = False
+            # self.controller2.restart = False
             self.controller.episodes+=1
             self.controller2.episodes+=1
 
@@ -193,7 +194,7 @@ class Field(PygameFramework):
             self.robots_allies[x].update_colors()
         for x in range(self.num_opponents):
             self.robots_opponents[x].update_colors()
-        if(self.controller.episodes%50==0 and self.controller.episodes > 50):
+        if(self.controller.episodes%200==0 and self.controller.episodes > 200):
             self.controller.can_train = not self.controller.can_train
             self.controller2.can_train = not self.controller2.can_train
         # p = ((0.2,0.8,1.2, 1.6), (0.2,0.8,1.2, 1.6))

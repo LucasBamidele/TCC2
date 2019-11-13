@@ -325,7 +325,7 @@ def neural_net_model2_5(num_players, load=''):
 	model.add(Activation('softmax'))
 	
 
-	adam = Adam(lr=7e-5)
+	adam = Adam(lr=1e-3)
 	model.compile(loss='mse', optimizer=adam)
 	if(load):
 		model.load_weights(load)

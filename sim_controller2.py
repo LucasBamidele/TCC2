@@ -41,7 +41,7 @@ RETAKE_REWARD = 100
 ENEMY_GOAL_REWARD = -500
 STUCK_REWARD = -100
 
-GAMMA = 0.8
+GAMMA = 0.85
 MAX_FRAMES = 80000
 ALPHA = 0.7
 EPSILON = 1	#change for 0.1
@@ -93,17 +93,17 @@ MAX_ANGLE_FRONT = 0.62
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 20
 
-MAX_EPISODES = 10
-SAMPLE = 4
+MAX_EPISODES = 200
+SAMPLE = 1
 
-BATCH_SIZE = 4*OBSERVE_TIMES//8 #OBSERVE_TIMES #1000
+BATCH_SIZE = 3*OBSERVE_TIMES//8 #OBSERVE_TIMES #1000
 
 
 MAX_DIST = 152
 
 TAU = 0.4
 _dir = ''
-# _dir = 'saved_models/Exp2/'
+_dir = 'saved_models/Exp2/'
 file_name = 'mymodel_episodic_big_net'
 model_name = file_name + '.h5'
 
@@ -210,7 +210,7 @@ class SimController(object):
 		self.restart = False
 		self.times = 1
 		self.iterations = 0
-		self.replay_memory = deque()
+		self.replay_memory = []
 		self.old_state = None
 		self.action_space = []
 		self.action_number_ang = None
@@ -219,6 +219,7 @@ class SimController(object):
 		self.episodes = 0
 		self.latest_rewards = []
 		self.mean_rewards = []
+		self.rew_sum = 0
 		self.log_loss = []
 		self.log_loss_model = []
 		self.play = True
@@ -237,11 +238,11 @@ class SimController(object):
 		if(self.isEnemy):
 			enemy_string = 'enemy_'
 		if(only_play or load_model):
-			self.model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS, _dir + enemy_string+'1_'+model_name)
+			self.model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'1_'+model_name)
 			# self.target_model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy+'1_'+model_name)
-			self.model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS, _dir + enemy_string+'2_'+model_name)
+			self.model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'2_'+model_name)
 			# self.target_model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
-			self.model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS, _dir + enemy_string+'3_'+model_name)
+			self.model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'3_'+model_name)
 			# self.target_model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
 		else :
 			self.model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'1_'+model_name)
@@ -282,10 +283,10 @@ class SimController(object):
 	#TODO
 
 	def transform_reward(self, t=0):
-		b = len(self.replay_memory) - t - 1
-		if(t==0):
-			b = -1
-		for j in range(len(self.replay_memory) - 2, b, -1):
+		# b = len(self.replay_memory) - t - 1
+		# if(t==0):
+		# 	b = -1
+		for j in range(len(self.replay_memory) - 2, -1, -1):
 			self.replay_memory[j][4] += self.replay_memory[j + 1][4] * GAMMA
 
 	def getReward(self, new_state, robot_allies, robot_opponents, ball):
@@ -430,40 +431,42 @@ class SimController(object):
 			return
 		new_state = transform_to_state(robot_allies, robot_opponents, ball, [self.action_number_ang, self.action_number_lin])
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
+		self.rew_sum += reward
 		#print('reward: ',reward)
 		if((self.times_since_restart%OBSERVE_TIMES!=0 or self.times_since_restart < 2) and (not self.restart)):
 			self.replay_memory.append([self.old_state[:], self.action, self.action2, self.action3, reward, new_state[:]])
-			self.t_reward+=1
+			# self.t_reward+=1
 		else :
 			self.replay_memory.append([self.old_state[:], self.action, self.action2, self.action3, reward, new_state[:]])
-			self.t_reward+=1
+			# self.t_reward+=1
 			#exit()
 			#build batch
 			#batch = random.sample(self.replay_memory, BATCH_SIZE)
 			self.transform_reward(self.t_reward)
-			if(len(self.replay_memory) < BATCH_SIZE):
-				batch = self.replay_memory[:]
-			else:
-				batch = random.sample(self.replay_memory,BATCH_SIZE)[:]
-			t1 = time()
-			x_train, y_train, y_train2, y_train3 = self.generate_train_from_batch2(batch)
-			elapsed = time() - t1
-			# print('time to batch: ', elapsed*1000, 'ms')
-			#x_train = np.expand_dims(x_train, axis=2)
-			# print('fitting...')
-			# self.replay_memory = self.replay_memory[10:]
-			for _ in range(10):
-				self.replay_memory.popleft()
-			self.t_reward = 0
-			t1 = time()
-			# self.model.fit(x_train, [y_train,y2_train], batch_size=BATCH_SIZE, epochs=5, verbose=0)
-			#self.model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=20, verbose=0)
 			if(self.can_train):
+				if(len(self.replay_memory) < BATCH_SIZE):
+					batch = self.replay_memory[:]
+				else:
+					batch = random.sample(self.replay_memory,BATCH_SIZE)
+				t1 = time()
+				x_train, y_train, y_train2, y_train3 = self.generate_train_from_batch2(batch)
+				elapsed = time() - t1
+				print('time to batch: ', elapsed, 's')
+				#x_train = np.expand_dims(x_train, axis=2)
+				# print('fitting...')
+				# self.replay_memory = self.replay_memory[10:]
+				# for _ in range(10):
+				# 	self.replay_memory.popleft()
+				# self.t_reward = 0
+				# self.model.fit(x_train, [y_train,y2_train], batch_size=BATCH_SIZE, epochs=5, verbose=0)
+				#self.model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=20, verbose=0)
+				t1 = time()
 				self.model1.train_on_batch(x_train, y_train)
 				self.model2.train_on_batch(x_train, y_train2)
 				self.model3.train_on_batch(x_train, y_train3)
-			elapsed = time() - t1
-			# print('time to fit: ', elapsed*1000, 'ms')
+				elapsed = time() - t1
+				self.replay_memory = []
+				print('time to fit: ', elapsed, 's')
 
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
@@ -482,17 +485,18 @@ class SimController(object):
 			exit()
 
 	def save_and_restart(self):
-		if(len(self.replay_memory) > LIMIT_MEMORY):
-			print('popping!')
-			for _ in range(LIMIT_MEMORY//4):
-				self.replay_memory.popleft()
+		# if(len(self.replay_memory) > LIMIT_MEMORY):
+		# 	print('popping!')
+		# 	for _ in range(LIMIT_MEMORY//5):
+		# 		self.replay_memory.popleft()
 		if(self.episodes%50==0 and self.episodes > 50):
 			self.target_train()
-		self.mean_rewards.append(np.mean(self.latest_rewards[:]))
+		self.mean_rewards.append(self.rew_sum)
+		self.rew_sum = 0
 		self.latest_rewards = []
 		print('saving and restarting...')
 		print(self.episodes, 'out of ', MAX_EPISODES*10)
-		print('EPSILON: ', max(EPSILON - self.decrease, 0.08))
+		# print('EPSILON: ', max(EPSILON - self.decrease, 0.08))
 		self.restart = True
 		enemy = ''
 		if(self.isEnemy):
