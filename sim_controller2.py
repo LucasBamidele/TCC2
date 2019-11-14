@@ -443,12 +443,12 @@ class SimController(object):
 		self.last_speeds = deque()
 		self.ball_memory = deque()
 		self.player_memory = deque()
-		self.episodes+=1
+		# self.episodes+=1
 		self.printed = False
 		self.play = False
 		if(self.episodes%MAX_EPISODES==(MAX_EPISODES-1)):
 			print('saving...')
-			enemy_sv = ''
+			enemy_sv = 'ally'
 			if(self.isEnemy):
 				enemy_sv = 'enemy-'
 			self.actor.save_weights(_dir + str(self.episodes) + enemy_sv +model_name)
@@ -625,7 +625,7 @@ class SimController(object):
 
 
 			self.mean_rewards.append(np.mean(self.latest_rewards[:]))
-			eny_print = ''
+			eny_print = 'ally '
 			if(self.isEnemy):
 				eny_print = 'enemy '
 			print('restarting...')

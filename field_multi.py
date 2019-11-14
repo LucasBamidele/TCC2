@@ -177,6 +177,8 @@ class Field(PygameFramework):
             self.controller.restart = True
             print('goall ally!')
         if(self.controller.restart and self.controller2.restart):
+            self.controller.episodes+=1
+            self.controller2.episodes+=1
             self.controller.restart = False
             self.controller2.restart = False
             self.restart()
