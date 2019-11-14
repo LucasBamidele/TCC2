@@ -104,7 +104,7 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 LIN_ACCEL_VEC = [i for i in range(-5,6)]
 ANG_ACCEL_VEC = [i for i in range(-2, 3)]
 
-MAX_FRAMES_GAME = 500
+MAX_FRAMES_GAME = 300
 BUFFER_SIZE = MAX_FRAMES_GAME
 MAX_ANGLE_FRONT = 0.62
 
@@ -121,21 +121,23 @@ TEST_CRITIC = 100
 DUMMY_ACTION, DUMMY_VALUE, dummy_rewards, dummy_pred_values= np.zeros((1, NUMBER_OF_ACTIONS)), np.zeros((1, 1)),  np.zeros((1, 1)),  np.zeros((1, 1))
 
 
-BATCH_SIZE = MAX_FRAMES_GAME #OBSERVE_TIMES #1000
-END_GAME_THRESHOLD = MAX_FRAMES_GAME*3
+BATCH_SIZE = MAX_FRAMES_GAME//2 #OBSERVE_TIMES #1000
+END_GAME_THRESHOLD = MAX_FRAMES_GAME
 
 MAX_DIST = 152
+
+SAMPLE = 4
 
 TAU = 0.4
 if(p):
 	p = str(p)
-	file_name = 'mymodel_ppo3'
+	file_name = 'mymodel_ppo_1v1'
 	model_name = p + file_name + '.h5'
 	file_name_crit = p + 'crit' + file_name
 	model_name2 = file_name_crit + '.h5'
 	_dir = 'saved_models/'
 else :
-	file_name = 'mymodel_ppo3'
+	file_name = 'mymodel_ppo_1v1'
 	model_name = file_name + '.h5'
 	file_name_crit = 'crit' + file_name
 	model_name2 = file_name_crit + '.h5'
@@ -309,7 +311,7 @@ class SimController(object):
 		self.action = 0
 		if(only_play or load_model):
 			#self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name2)
-			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, 'saved_models/499999enemy-mymodel_ppo3.h5')#_dir + model_name)
+			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name)#'saved_models/499999enemy-mymodel_ppo3.h5')#_dir + model_name)
 		else :
 			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
 			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
@@ -446,7 +448,7 @@ class SimController(object):
 		# self.episodes+=1
 		self.printed = False
 		self.play = False
-		if(self.episodes%MAX_EPISODES==(MAX_EPISODES-1)):
+		if(self.episodes%MAX_EPISODES==0 and self.episodes > 1):
 			print('saving...')
 			enemy_sv = 'ally'
 			if(self.isEnemy):
@@ -556,7 +558,7 @@ class SimController(object):
 			self.latest_rewards[j] += self.latest_rewards[j + 1] * GAMMA
 
 	def compute(self, robot_allies, robot_opponents, ball):
-		if(self.times%4 != 0 and not only_play):
+		if(self.times%SAMPLE != 0 and not only_play):
 			self.times+=1
 			return
 		self.add_ball_memory(ball)
@@ -571,7 +573,10 @@ class SimController(object):
 		self.tmp_batch[0].append(self.old_state[:].transpose())
 		self.tmp_batch[1].append(self.action_matrix[:])
 		self.tmp_batch[2].append(self.predicted_action[:])
-		self.tmp_batch[3].append(1)
+		goal = 0
+		if(self.isGoal):
+			goal = 1
+		self.tmp_batch[3].append(1 - goal)
 
 		if(done):
 			# self.transform_reward() #what
@@ -587,6 +592,7 @@ class SimController(object):
 				self.batch[4].append(mask)
 			self.tmp_batch = [[], [], [], []]
 		if(len(self.batch[0]) >= BUFFER_SIZE or self.isGoal):
+			myt = time()
 			self.timeout = False
 			self.times_since_restart = 1
 			obs, action, pred, reward, mask = np.array(self.batch[0]), np.array(self.batch[1]), np.array(self.batch[2]), np.reshape(np.array(self.batch[3]), (len(self.batch[3]), 1)), np.array(self.batch[4])
@@ -603,6 +609,8 @@ class SimController(object):
 			# print(pred_values[-50:].transpose())
 			advantage = returns_ - pred_values
 			advantage_norm = (advantage - np.mean(advantage)) / (np.std(advantage) + 1e-10)
+			elapsed = time() - myt
+			print('batching: ', elapsed, 's')
 			init_t = time()
 			critic_loss = self.critic.fit([obs], [returns_], batch_size=b_size, shuffle=False, epochs=EPOCHS*2, verbose=False)
 			print('critic loss: ', critic_loss.history['loss'][-1])
@@ -694,7 +702,7 @@ class SimController(object):
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		if(only_play):
 			self.times +=1
-		if(self.times%4!=0):# and not only_play):
+		if(self.times%SAMPLE!=0):# and not only_play):
 			return
 		lastinputs = [self.action_number_ang, self.action_number_lin]
 		state = transform_to_state(ally_positions, enemy_positions, ball, lastinputs)
@@ -705,9 +713,12 @@ class SimController(object):
 		predicted_action = np.argmax(predicted_qval)
 		self.predicted_action = predicted_qval
 		# print('state',state.transpose())
-		# p = random.random()
-		action = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
-		if(only_play or self.play):
+		p = random.random()
+		# action = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
+		# if(only_play or self.play):
+		if(p < 0.1):
+			action = random.randint(0,NUMBER_OF_ACTIONS-1)
+		else:
 			action = predicted_action
 		# if((not self.val or p < 0.15) and not only_play):
 		# 	action = (random.randint(0,NUMBER_OF_ACTIONS-1))

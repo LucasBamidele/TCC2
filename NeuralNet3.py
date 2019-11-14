@@ -4,11 +4,11 @@ from keras.layers import Input, Dense
 from keras import backend as K
 from keras.optimizers import Adam
 
-import numba as nb
+# import numba as nb
 
-HIDDEN_SIZE_ACTOR = 1024
+HIDDEN_SIZE_ACTOR = 150
 HIDDEN_SIZE_CRITIC = 256
-LR = 1e-8
+LR = 1e-4
 LR2 = 1e-4
 LOSS_CLIPPING = 0.2
 ENTROPY_LOSS = -1e-4
@@ -17,7 +17,7 @@ NUM_LAYERS = 2
 NUM_INPUTS = 15
 NUM_OUTPUTS = 9 
 
-@nb.jit
+# @nb.jit
 def exponential_average(old, new, b1):
     return old * b1 + (1-b1) * new
 
