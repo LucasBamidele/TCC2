@@ -93,8 +93,8 @@ clock = pygame.time.Clock()
 dt = 1 / FPS
 
 # Global variables
-num_allies = 3
-num_opponents = 3
+num_allies = 1
+num_opponents = 0
 team_color = 0  # blue   = 0
                 # yellow = 1
 publish_topic = 'vision_output_topic'

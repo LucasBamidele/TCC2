@@ -269,7 +269,7 @@ def neural_net_model2_3(num_players, load=''):
 def neural_net_model2_4(num_players, load=''):
 	model = Sequential()
 	#layer 1
-	my_shape = ((5 + 9*num_players))
+	my_shape = ((5 + 10*num_players))
 	# my_shape = 5
 	model.add(Dense(
 		64,input_shape=(my_shape,)
@@ -292,7 +292,7 @@ def neural_net_model2_4(num_players, load=''):
 	model.add(Activation('softmax'))
 	
 
-	adam = Adam(lr=6e-5)
+	adam = Adam(lr=15e-5)
 	model.compile(loss='mse', optimizer=adam)
 	if(load):
 		model.load_weights(load)

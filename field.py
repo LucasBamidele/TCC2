@@ -79,7 +79,7 @@ class Field(PygameFramework):
                                  position=(-self.init_x_position[x], x) 
                                  ) for x in range(self.num_opponents)]
         self.robots_allies[0].body.angle = 0
-        self.initial_pos()
+        # self.initial_pos()
 
         super(Field, self).run()
         
@@ -100,9 +100,12 @@ class Field(PygameFramework):
 
     def update_speeds(self):
         speed1 = self.controller.sync_control_centrallized(self.robots_allies, self.robots_opponents, self.ball)
-        speed2 = self.controller2.sync_control_centrallized(self.robots_opponents, self.robots_allies, self.ball)
+        # speed2 = self.controller2.sync_control_centrallized(self.robots_opponents, self.robots_allies, self.ball)
+        speed2 = None
         if(speed1 and speed2):
             self.ang_and_lin_speed = speed1[:5] + speed2[5:]
+        elif(speed1):
+            self.ang_and_lin_speed = speed1[:]
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
@@ -175,6 +178,8 @@ class Field(PygameFramework):
         self.update_phisics(settings)
         if(not only_play):
             self.compute_learning()
+        self.controller.times+=1
+        self.controller2.times+=1
         if(only_play and (self.ball.body.position[0] >= BALL_MAX_X) or self.ball.body.position[0] <= BALL_MIN_X):
             self.controller.restart = True
             self.controller2.restart = True
@@ -195,7 +200,7 @@ class Field(PygameFramework):
         for x in range(self.num_opponents):
             self.robots_opponents[x].update_colors()
         if(self.controller.episodes%200==0 and self.controller.episodes > 200):
-            self.controller.can_train = not self.controller.can_train
+            # self.controller.can_train = not self.controller.can_train
             self.controller2.can_train = not self.controller2.can_train
         # p = ((0.2,0.8,1.2, 1.6), (0.2,0.8,1.2, 1.6))
         #self.trajectory.update(self.trajectory_x, self.trajectory_y)

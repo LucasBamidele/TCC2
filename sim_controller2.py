@@ -67,14 +67,14 @@ MAX_MEMORY_SPEED = 20
 LIN_SPEED_VEC = [50, 0, -50]
 ANG_SPEED_VEC = [3, 0, -3]
 
-NUMBER_OF_PLAYERS = 3
+NUMBER_OF_PLAYERS = 1
 MAX_Y_GOAL = 17
 MIN_Y_GOAL = -17
 
 
 BALL_MAX_X = 76
 BALL_MIN_X = -76
-FEATURE_PLAYER = 9#8
+FEATURE_PLAYER = 10#8
 NUMBER_BALL_FEATURES = 5#5
 NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 NUMBER_OF_ACTIONS = 9#*NUMBER_OF_PLAYERS
@@ -93,18 +93,18 @@ MAX_ANGLE_FRONT = 0.62
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 20
 
-MAX_EPISODES = 200
-SAMPLE = 1
+MAX_EPISODES = 20
+SAMPLE = 2
 
-BATCH_SIZE = 3*OBSERVE_TIMES//8 #OBSERVE_TIMES #1000
+BATCH_SIZE = 6*OBSERVE_TIMES//8 #OBSERVE_TIMES #1000
 
 
 MAX_DIST = 152
 
 TAU = 0.4
 _dir = ''
-_dir = 'saved_models/Exp2/'
-file_name = 'mymodel_episodic_big_net'
+# _dir = 'saved_models/Exp2/'
+file_name = 'mymodel_episodic_1v1'
 model_name = file_name + '.h5'
 
 MIN_DELTA_NO_MOVEMENT = 0.5
@@ -188,6 +188,9 @@ def transform_to_state(robot_allies, robot_opponents, ball, inputs=None, enemy=F
 		# state.append(distance_between_bodies(robot_allies[a].body, ball.body))
 		# state.append(angle_between_bodies(robot_allies[a].body, ball.body))
 		state.append(distance_cool(robot_allies[a].body.angle, angle_between_bodies(robot_allies[a].body, ball.body)))
+		lin_vel = math.sqrt(robot_allies[a].body.linearVelocity[0]**2 + robot_allies[a].body.linearVelocity[1]**2)
+		diff_speed = abs(abs(action_space[inputs][1]) - lin_vel)
+		state.append(scale(diff_speed, 50))
 	#print('distance between: ', distance_between_bodies(robot_allies[0].body, ball.body))
 	#print('angle between: ', math.degrees(angle_between_bodies(robot_allies[a].body, ball.body)))
 	state = np.array(state)
@@ -217,6 +220,7 @@ class SimController(object):
 		self.action_number_lin = None
 		self.times_since_restart = 1
 		self.episodes = 0
+		self.stuck_count = 0
 		self.latest_rewards = []
 		self.mean_rewards = []
 		self.rew_sum = 0
@@ -232,25 +236,23 @@ class SimController(object):
 		self.speed = [0,0]
 		self.t_reward = 0
 		self.action = 5
-		self.action2 = 5
-		self.action3 = 5
 		enemy_string = ''
 		if(self.isEnemy):
-			enemy_string = 'enemy_'
+			enemy_string = ''#'enemy_'
 		if(only_play or load_model):
 			self.model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'1_'+model_name)
 			# self.target_model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy+'1_'+model_name)
-			self.model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'2_'+model_name)
+			# self.model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'2_'+model_name)
 			# self.target_model2 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
-			self.model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'3_'+model_name)
+			# self.model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, _dir + enemy_string+'3_'+model_name)
 			# self.target_model3 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, model_name)
 		else :
-			self.model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'1_'+model_name)
-			self.target_model1 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'1_'+model_name)
-			self.model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'2_'+model_name)
-			self.target_model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'2_'+model_name)
-			self.model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'3_'+model_name)
-			self.target_model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'3_'+model_name)
+			self.model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'1_'+model_name)
+			self.target_model1 = nn.neural_net_model2_4(NUMBER_OF_PLAYERS, enemy_string+'1_'+model_name)
+			# self.model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'2_'+model_name)
+			# self.target_model2 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'2_'+model_name)
+			# self.model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'3_'+model_name)
+			# self.target_model3 = nn.neural_net_model2_5(NUMBER_OF_PLAYERS)#, enemy_string+'3_'+model_name)
 		self.reward = {
 			'goal': GOAL_REWARD,
 			'pass': PASS_REWARD,
@@ -286,8 +288,9 @@ class SimController(object):
 		# b = len(self.replay_memory) - t - 1
 		# if(t==0):
 		# 	b = -1
+
 		for j in range(len(self.replay_memory) - 2, -1, -1):
-			self.replay_memory[j][4] += self.replay_memory[j + 1][4] * GAMMA
+			self.replay_memory[j][2] += self.replay_memory[j + 1][2] * GAMMA
 
 	def getReward(self, new_state, robot_allies, robot_opponents, ball):
 		reward = -1 #- self.t_hits//30
@@ -382,18 +385,6 @@ class SimController(object):
 		weight_list = np.arange(len(model_weights))
 		target_model_weights[weight_list] = TAU * model_weights[weight_list] + (1 - TAU) * target_model_weights[weight_list]
 		self.target_model1.set_weights(target_model_weights)
-
-		model_weights = np.array(self.model2.get_weights())
-		target_model_weights = np.array(self.target_model2.get_weights())
-		weight_list = np.arange(len(model_weights))
-		target_model_weights[weight_list] = TAU * model_weights[weight_list] + (1 - TAU) * target_model_weights[weight_list]
-		self.target_model2.set_weights(target_model_weights)
-
-		model_weights = np.array(self.model3.get_weights())
-		target_model_weights = np.array(self.target_model3.get_weights())
-		weight_list = np.arange(len(model_weights))
-		target_model_weights[weight_list] = TAU * model_weights[weight_list] + (1 - TAU) * target_model_weights[weight_list]
-		self.target_model3.set_weights(target_model_weights)
 		# model_weights = self.model.get_weights()
 		# target_model_weights = self.target_model.get_weights()
 		# #weight_list = np.arange(len(model_weights))
@@ -427,17 +418,27 @@ class SimController(object):
 
 	def compute(self, robot_allies, robot_opponents, ball):
 		if(self.times%SAMPLE != 0 and not only_play):
-			self.times+=1
 			return
-		new_state = transform_to_state(robot_allies, robot_opponents, ball, [self.action_number_ang, self.action_number_lin])
+		new_state = transform_to_state(robot_allies, robot_opponents, ball, self.action)
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
+		lin_vel = math.sqrt(robot_allies[0].body.linearVelocity[0]**2 + robot_allies[0].body.linearVelocity[1]**2)
+		diff_speed = abs(abs(action_space[self.action][1]) - lin_vel)
+		if(diff_speed > 20):
+			self.stuck_count+=1
+			if(self.stuck_count > 6):
+				print('stuck!')
+				reward = self.reward['stuck']
+				self.stuck_count = 0
+		else:
+			self.stuck_count = 0
+		
 		self.rew_sum += reward
 		#print('reward: ',reward)
 		if((self.times_since_restart%OBSERVE_TIMES!=0 or self.times_since_restart < 2) and (not self.restart)):
-			self.replay_memory.append([self.old_state[:], self.action, self.action2, self.action3, reward, new_state[:]])
+			self.replay_memory.append([self.old_state[:], self.action, reward, new_state[:]])
 			# self.t_reward+=1
 		else :
-			self.replay_memory.append([self.old_state[:], self.action, self.action2, self.action3, reward, new_state[:]])
+			self.replay_memory.append([self.old_state[:], self.action, reward, new_state[:]])
 			# self.t_reward+=1
 			#exit()
 			#build batch
@@ -449,7 +450,7 @@ class SimController(object):
 				else:
 					batch = random.sample(self.replay_memory,BATCH_SIZE)
 				t1 = time()
-				x_train, y_train, y_train2, y_train3 = self.generate_train_from_batch2(batch)
+				x_train, y_train = self.generate_train_from_batch2(batch)
 				elapsed = time() - t1
 				print('time to batch: ', elapsed, 's')
 				#x_train = np.expand_dims(x_train, axis=2)
@@ -462,8 +463,6 @@ class SimController(object):
 				#self.model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=20, verbose=0)
 				t1 = time()
 				self.model1.train_on_batch(x_train, y_train)
-				self.model2.train_on_batch(x_train, y_train2)
-				self.model3.train_on_batch(x_train, y_train3)
 				elapsed = time() - t1
 				self.replay_memory = []
 				print('time to fit: ', elapsed, 's')
@@ -472,15 +471,12 @@ class SimController(object):
 		self.add_player_memory(robot_allies[0])
 		if(self.times_since_restart >= MAX_FRAMES_GAME or self.restart):
 			self.save_and_restart()
-		self.times+=1
 		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			enemy = ''
 			if(self.isEnemy):
 				enemy = 'enemy_'
 			print('saving and exiting ...')
 			self.model1.save_weights(enemy+'1_'+model_name)
-			self.model2.save_weights(enemy+'2_'+model_name)
-			self.model3.save_weights(enemy+'3_'+model_name)
 			plotter.plotRewards(self.mean_rewards, figname=file_name)
 			exit()
 
@@ -502,8 +498,6 @@ class SimController(object):
 		if(self.isEnemy):
 			enemy = 'enemy_'
 		self.model1.save_weights(enemy+'1_'+model_name)
-		self.model2.save_weights(enemy+'2_'+model_name)
-		self.model3.save_weights(enemy+'3_'+model_name)
 
 	def treatRestart(self):
 		self.times_since_restart = 1
@@ -526,50 +520,33 @@ class SimController(object):
 		old_states = np.zeros(shape=(mb_len,NUM_FEATURES))
 		rewards = np.zeros(shape=(mb_len,))
 		actions = np.zeros(shape=(mb_len,1,))
-		actions2 = np.zeros(shape=(mb_len,1,))
-		actions3 = np.zeros(shape=(mb_len,1,))
 		new_states = np.zeros(shape=(mb_len, NUM_FEATURES))
 		d_actions = np.zeros(shape=(mb_len,))
 		for i, memory in enumerate(batch):
-			old_state_m, action, action2, action3, reward_m, new_state_m = memory
+			old_state_m, action, reward_m, new_state_m = memory
 			old_states[i, :] = old_state_m.transpose()[...]
 			actions[i] = action
-			actions2[i] = action2
-			actions3[i] = action3
 			rewards[i] = reward_m
 			new_states[i, :] = new_state_m.transpose()[...]
 			d_actions[i] = self.isTerminalState(reward_m)
 
 		old_qvals = self.model1.predict(old_states, batch_size=mb_len)
-		old_qvals2 = self.model2.predict(old_states, batch_size=mb_len)
-		old_qvals3 = self.model3.predict(old_states, batch_size=mb_len)
 
 		new_qvals = self.target_model1.predict(new_states, batch_size=mb_len)
-		new_qvals2 = self.target_model2.predict(new_states, batch_size=mb_len)
-		new_qvals3 = self.target_model3.predict(new_states, batch_size=mb_len)
 
 		maxQs = np.max(new_qvals, axis=1)
-		maxQs2 = np.max(new_qvals2, axis=1)
-		maxQs3 = np.max(new_qvals3, axis=1)
 
 		terminal_idx = np.where(d_actions == 1)[0]
 		non_term_idx = np.where(d_actions == 0)[0]
 		#maxQs = np.array(maxQs)
 		# maxQs = np.max(new_qvals[0], axis=1)
 		y = old_qvals[:]
-		y2 = old_qvals2[:]
-		y3 = old_qvals3[:]
 		batch_list = np.linspace(0,mb_len-1,mb_len, dtype=int)
 		#y[batch_list, actions[batch_list,0].astype(int)] = (1-ALPHA)*y[batch_list, actions[batch_list,0].astype(int)] + ALPHA*(rewards[batch_list] + (GAMMA * maxQs[batch_list]))
 		y[terminal_idx, actions[terminal_idx,0].astype(int)] = (rewards[terminal_idx])
 		y[non_term_idx, actions[non_term_idx,0].astype(int)] = (rewards[non_term_idx] + (GAMMA * maxQs[non_term_idx]))
-		y2[terminal_idx, actions[terminal_idx,0].astype(int)] = (rewards[terminal_idx])
-		y2[non_term_idx, actions[non_term_idx,0].astype(int)] = (rewards[non_term_idx] + (GAMMA * maxQs2[non_term_idx]))
-		y3[terminal_idx, actions[terminal_idx,0].astype(int)] = (rewards[terminal_idx])
-		y3[non_term_idx, actions[non_term_idx,0].astype(int)] = (rewards[non_term_idx] + (GAMMA * maxQs3[non_term_idx]))
-		
 		X_train = old_states
-		return X_train, y, y2, y3
+		return X_train, y,
 
 
 	def generate_train_from_batch(self, batch):
@@ -625,42 +602,33 @@ class SimController(object):
 
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		if(only_play):
-			self.times +=1
+			pass
+			# self.times +=1
 		if(self.times%SAMPLE!=0): #and not only_play):
 			return
 		# lastinputs = [self.action_number_ang, self.action_number_lin]
-		acts = [self.action, self.action2, self.action3]
+		acts = self.action
 		state = transform_to_state(ally_positions, enemy_positions, ball, acts)
 		self.old_state = state[:]
 		# print('state',state.transpose())
 		# dec = max(EPSILON - self.decrease, 0.08)
 		# print('EPSILON', dec)
 		predicted_qval = self.model1.predict(state[:].transpose(), batch_size=1) #checar batch size!!
-		predicted_qval2 = self.model2.predict(state[:].transpose(), batch_size=1) #checar batch size!!
-		predicted_qval3 = self.model3.predict(state[:].transpose(), batch_size=1) #checar batch size!!
 		action1 = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
-		action2 = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval2[0, :])
-		action3 = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval3[0, :])
 		if(self.play):
 			action1 = np.argmax(predicted_qval)
-			action2 = np.argmax(predicted_qval2)
-			action3 = np.argmax(predicted_qval3)
 		# self.speed = self.action_space[action]
-		speed1, speed2, speed3 = action_space[action1], action_space[action2], action_space[action3]
+		speed1  = action_space[action1]
 		self.action = action1
-		self.action2 = action2
-		self.action3 = action3
 		# self.action = [ang_accel, lin_accel]
 		# #print('action: ', self.action)
 		# self.add_speed_memory(self.speed)
 		#print('speed: ', self.speed)
 		a,b = speed1
-		c,d = speed2
-		e,f = speed3
 
 		# print('0 OUTPUT')
 		# a,b = 0,0
-		allies = [(a,b),(c,d),(e,f),(0,0),(0,0)]
+		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
 		#self.decrease = self.times/MAX_FRAMES#7000000
 		# self.decrease = self.episodes/(2*MAX_EPISODES)#*3)

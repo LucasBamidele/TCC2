@@ -67,7 +67,8 @@ class PhysicsRobot(object):
 
         # apply necessary force
         linear_velocity_difference = desired_linear_velocity - current_speed
-        desired_inpulse = 0.5 * self.body.mass * linear_velocity_difference
+        #adicionado essa multiplicacao por 2
+        desired_inpulse = 0.5 * 0.5 * self.body.mass * linear_velocity_difference
         
         self.body.ApplyLinearImpulse(desired_inpulse * current_forward_normal,
                              self.body.worldCenter, True)
