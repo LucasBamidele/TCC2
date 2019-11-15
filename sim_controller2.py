@@ -111,7 +111,7 @@ MAX_ANGLE_FRONT = 0.62
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 60
 
-MAX_EPISODES = 50000
+MAX_EPISODES = 5000
 
 # use_cuda = torch.cuda.is_available()
 # device   = torch.device("cuda" if use_cuda else "cpu")
@@ -448,6 +448,11 @@ class SimController(object):
 		# self.episodes+=1
 		self.printed = False
 		self.play = False
+		if(self.episodes%100==0):
+			print('saving...')
+			self.actor.save_weights(_dir + model_name)
+			self.critic.save_weights(_dir +  model_name2)
+
 		if(self.episodes%MAX_EPISODES==0 and self.episodes > 1):
 			print('saving...')
 			enemy_sv = 'ally'
