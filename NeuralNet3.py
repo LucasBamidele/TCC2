@@ -8,8 +8,8 @@ from keras.optimizers import Adam
 
 HIDDEN_SIZE_ACTOR = 150
 HIDDEN_SIZE_CRITIC = 256
-LR = 1e-4
-LR2 = 1e-4
+LR = 5e-4
+LR2 = 2e-4
 LOSS_CLIPPING = 0.2
 ENTROPY_LOSS = -1e-4
 C1 = 0.5
