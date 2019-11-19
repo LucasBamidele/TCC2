@@ -1,2 +1,4 @@
 download file from 
 scp -i gpu_lucas.pem ubuntu@ec2-34-230-20-140.compute-1.amazonaws.com:TCC2/saved_models/mymodel_v15.h5 ~/TCC2/saved_models
+
+scp -i gpu_lucas.pem ubuntu@ec2-3-215-176-138.compute-1.amazonaws.com:TCC2/saved_models/10000allymymodel_ppo_1v1.h5 ~/TCC2/saved_models/Exp4

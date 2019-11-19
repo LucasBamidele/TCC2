@@ -111,7 +111,7 @@ MAX_ANGLE_FRONT = 0.62
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 60
 
-MAX_EPISODES = 5000
+MAX_EPISODES = 50
 
 # use_cuda = torch.cuda.is_available()
 # device   = torch.device("cuda" if use_cuda else "cpu")
@@ -282,7 +282,7 @@ class SimController(object):
 		self.decrease = 0.0
 		self.isGoal = False
 		self.restart = False
-		self.times = 1
+		self.times = 0
 		self.iterations = 0
 		self.replay_memory = []
 		self.old_state = None
@@ -564,7 +564,7 @@ class SimController(object):
 
 	def compute(self, robot_allies, robot_opponents, ball):
 		if(self.times%SAMPLE != 0 and not only_play):
-			self.times+=1
+			# self.times+=1
 			return
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
@@ -651,7 +651,7 @@ class SimController(object):
 			
 		if(self.restart):
 			self.treatRestart()
-		self.times+=1
+		# self.times+=1
 		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			print('saving and exiting ...')
 			enemy_sv = ''
@@ -706,7 +706,8 @@ class SimController(object):
 
 	def sync_control_centrallized(self, ally_positions, enemy_positions, ball):
 		if(only_play):
-			self.times +=1
+			pass
+			# self.times +=1
 		if(self.times%SAMPLE!=0):# and not only_play):
 			return
 		lastinputs = [self.action_number_ang, self.action_number_lin]
@@ -721,7 +722,7 @@ class SimController(object):
 		p = random.random()
 		# action = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
 		# if(only_play or self.play):
-		if(p < 0.1):
+		if(p < 0.1 and not only_play):
 			action = random.randint(0,NUMBER_OF_ACTIONS-1)
 		else:
 			action = predicted_action

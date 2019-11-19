@@ -173,6 +173,7 @@ class Field(PygameFramework):
     def Step(self, settings):
         self.update_speeds()
         self.update_phisics(settings)
+        self.controller.times +=1
         if(not only_play):
             self.compute_learning()
         if(only_play and self.ball.body.position[0] >= BALL_MAX_X):
