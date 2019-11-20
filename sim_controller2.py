@@ -10,6 +10,7 @@ TODO:
 import numpy as np
 import NeuralNet as nn
 import random
+import LogAndPlot as plotter
 from keras.utils import to_categorical
 from collections import deque
 from time import sleep, time
@@ -73,18 +74,19 @@ ANG_ACCEL_VEC = [i for i in range(-2, 3)]
 
 MAX_FRAMES_GAME = 900
 
-OBSERVE_TIMES = 180#1800#3600 # BUFFER
+OBSERVE_TIMES = 600#1800#3600 # BUFFER
 MAX_MEMORY_BALL = 15
 
-MAX_EPISODES = 10000
+MAX_EPISODES = 10
 
 
-BATCH_SIZE = 5*OBSERVE_TIMES//6 #OBSERVE_TIMES #1000
+BATCH_SIZE = 4*OBSERVE_TIMES//6 #OBSERVE_TIMES #1000
 
 
 MAX_DIST = 152
 
-model_name = 'saved_models/mymodel_episodic_v10.h5'
+#model_name = 'saved_models/mymodel_episodic_v10.h5'
+model_name = 'saved_models/model_not_episodic.h5'
 MIN_DELTA_NO_MOVEMENT = 0.5
 def dotproduct(v1, v2):
   return sum((a*b) for a, b in zip(v1, v2))
@@ -170,7 +172,7 @@ class SimController(object):
 		self.restart = False
 		self.times = 1
 		self.iterations = 0
-		self.replay_memory = []
+		self.replay_memory = deque()
 		self.old_state = None
 		self.action_space = []
 		self.action_number_ang = None
@@ -199,6 +201,8 @@ class SimController(object):
 			'retake': RETAKE_REWARD,
 			'enemy_goal': ENEMY_GOAL_REWARD,
 		}
+		self.sum_per_episode = []
+		self.sum_in_episode = 0
 		self.last_speeds = deque()
 		self.ball_memory = deque()
 		self.player_memory = deque()
@@ -232,8 +236,9 @@ class SimController(object):
 			diff_distance = 1 
 		# print('diff_distance',diff_distance)
 		# print('diff direct', diff_direction)
-		reward += 1/(0.1 + diff_direction) + 1/(0.05 + 0.01*diff_distance)
+		reward += 2/(0.1 + diff_direction) + 1/(0.05 + 0.01*diff_distance)
 		ball_x = ball.body.position[0]
+		reward += ball_x
 		if(ball_x <= BALL_MIN_X):
 			pass
 			#reward = self.reward['enemy_goal']
@@ -245,7 +250,7 @@ class SimController(object):
 
 		elif(self.isPlayerStuck()):
 			print('stuck')
-			reward -= 30
+			# reward -= 30
 			# self.restart = True
 			self.player_memory = deque()
 		elif(self.playerHitBall(robot_allies, robot_opponents, ball)):
@@ -256,7 +261,7 @@ class SimController(object):
 		# 	reward = -500
 		elif(self.isSpinning()):
 			print('stuck spinning')
-			reward = reward -30
+			# reward = reward -30
 			self.last_speeds = deque()
 		self.t_hits+=1
 		# if(not self.isBallMoving()):
@@ -313,6 +318,7 @@ class SimController(object):
 			return
 		new_state = transform_to_state(robot_allies, robot_opponents, ball, [self.action_number_ang, self.action_number_lin])
 		reward = self.getReward(new_state, robot_allies, robot_opponents, ball)
+		self.sum_in_episode += reward
 		#print('reward: ',reward)
 		if(len(self.replay_memory) < OBSERVE_TIMES-1 and (not self.restart)):
 			self.replay_memory.append((self.old_state[:], self.action, reward, new_state[:]))
@@ -322,24 +328,26 @@ class SimController(object):
 			#build batch
 			#batch = random.sample(self.replay_memory, BATCH_SIZE)
 			batch = random.sample(self.replay_memory,BATCH_SIZE)
-			t1 = time()
+			# t1 = time()
 			x_train, y_train = self.generate_train_from_batch2(batch)
-			elapsed = time() - t1
-			print('time to batch: ', elapsed*1000, 'ms')
-			#x_train = np.expand_dims(x_train, axis=2)
-			print('fitting...')
-			self.replay_memory = []
-			t1 = time()
+			# elapsed = time() - t1
+			# print('time to batch: ', elapsed*1000, 'ms')
+			# #x_train = np.expand_dims(x_train, axis=2)
+			# print('fitting...')
+			self.replay_memory.popleft()
+			# t1 = time()
 			# self.model.fit(x_train, [y_train,y2_train], batch_size=BATCH_SIZE, epochs=5, verbose=0)
 			self.model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=20, verbose=0)
-			elapsed = time() - t1
-			print('time to fit: ', elapsed*1000, 'ms')
+			# elapsed = time() - t1
+			# print('time to fit: ', elapsed*1000, 'ms')
 		self.add_ball_memory(ball)
 		self.add_player_memory(robot_allies[0])
 		if(self.times%MAX_FRAMES_GAME==0):
 			print('saving and restarting...')
 			print(self.episodes, 'out of ', MAX_EPISODES*10)
 			self.episodes+=1
+			self.sum_per_episode.append(self.sum_in_episode)
+			self.sum_in_episode = 0
 			self.restart = True
 			self.model.save_weights(model_name)
 		if(self.restart):
@@ -347,11 +355,12 @@ class SimController(object):
 		self.times+=1
 		if(self.episodes > MAX_EPISODES*10):#self.times > MAX_FRAMES*10):
 			print('saving and exiting ...')
+			plotter.plotRewards(self.sum_per_episode)
 			self.model.save(model_name)
 			exit()
 
 	def treatRestart(self):
-		self.replay_memory = []
+		# self.replay_memory = []
 		self.last_speeds = deque()
 		self.ball_memory = deque()
 		self.player_memory = deque()
