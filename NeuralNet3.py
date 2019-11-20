@@ -6,9 +6,9 @@ from keras.optimizers import Adam
 
 # import numba as nb
 
-HIDDEN_SIZE_ACTOR = 150
+HIDDEN_SIZE_ACTOR = 40
 HIDDEN_SIZE_CRITIC = 256
-LR = 5e-3
+LR = 5e-4
 LR2 = 2e-4
 LOSS_CLIPPING = 0.2
 ENTROPY_LOSS = -1e-4
@@ -32,10 +32,9 @@ def proximal_policy_optimization_loss(advantage, old_prediction, rewards, values
 
 		actor_loss = -K.mean(K.minimum(r * advantage, K.clip(r, min_value=1 - LOSS_CLIPPING, max_value=1 + LOSS_CLIPPING) * advantage))
 		critic_loss = K.mean(K.square(rewards - values))
-		entropy = K.mean(-(newpolicy_probs * K.log((newpolicy_probs + 1e-10))))
 		# crit_loss = K.pow(y_true - y_pred, 2)
 		# critic_loss = -K.mean(crit_loss)
-		myloss = C1*critic_loss + actor_loss + ENTROPY_LOSS * entropy 
+		myloss = C1*critic_loss + actor_loss
 		return myloss
 	return loss
 

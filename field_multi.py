@@ -126,8 +126,11 @@ class Field(PygameFramework):
             self.robots_opponents[x].body.position = (random_x,random_y)
             self.robots_opponents[x].body.angle = angle #math.pi/2
 
-
-        self.ball.body.position = (0,0)
+        random_x = random.randint(-10, 10)
+        random_y = random.randint(-10,10)
+        # random_x = 0
+        # random_y = 0
+        self.ball.body.position = (random_x,random_y)
         self.ball.body.linearVelocity = (0,0)
 
 

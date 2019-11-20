@@ -135,7 +135,7 @@ if(p):
 	model_name = p + file_name + '.h5'
 	file_name_crit = p + 'crit' + file_name
 	model_name2 = file_name_crit + '.h5'
-	_dir = 'saved_models/'
+	_dir = 'saved_models/Exp1/'
 else :
 	file_name = 'mymodel_ppo_1v1'
 	model_name = file_name + '.h5'
@@ -353,6 +353,20 @@ class SimController(object):
 			gae = delta + gamma * tau * masks[step] * gae
 			returns.insert(0, gae + values[step])
 		return returns
+	def comp_returns(self, next_value, rewards, masks, gamma=0.99):
+		R = next_value
+		returns = []
+		for step in reversed(range(len(rewards))):
+			R = rewards[step] + gamma * R * masks[step]
+			returns.insert(0, R)
+		return returns
+	def comp_my_returns(self, next_value, rewards, masks, gamma=0.99):
+		R = next_value
+		returns = []
+		for step in (range(len(rewards))):
+			returns.append(rewards[step]*gamma)
+		return returns
+
 
 	def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantage):
 		batch_size = states.size(0)
@@ -495,7 +509,7 @@ class SimController(object):
 		goal_x = MAX_DIST/2
 		reward += 1000*((goal_x- diff_ball)/goal_x)
 		ball_x = ball.body.position[0]
-		reward += self.t_hits
+		# reward += self.t_hits
 		if(ball_x <= BALL_MIN_X):
 			reward = self.reward_dict['enemy_goal']
 			self.restart = True
@@ -531,10 +545,10 @@ class SimController(object):
 			# reward = self.reward_dict['timeout']
 			self.timeout = True
 			print('timeout!')
-		if(self.t_hits > 1):
-			self.t_hits = GAMMA*self.t_hits
-		else:
-			self.t_hits = 0
+		# if(self.t_hits > 1):
+		# 	self.t_hits = GAMMA*self.t_hits
+		# else:
+		# 	self.t_hits = 0
 		self.times_since_restart +=1
 		# if(not self.isBallMoving()):
 		# 	reward = reward - 10
@@ -609,7 +623,8 @@ class SimController(object):
 			old_prediction = pred
 			pred_values = self.critic.predict(obs)
 			next_value = self.critic.predict(new_state.transpose())
-			returns_ = np.array(self.compute_gae(next_value, reward, mask, pred_values))
+			# returns_ = np.array(self.compute_gae(next_value, reward, mask, pred_values))
+			returns_ = np.array(self.comp_my_returns(next_value, reward, mask))
 			# print(returns_[-50:].transpose())
 			# print(pred_values[-50:].transpose())
 			advantage = returns_ - pred_values
@@ -720,11 +735,12 @@ class SimController(object):
 		self.predicted_action = predicted_qval
 		# print('state',state.transpose())
 		p = random.random()
-		# action = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
+		action = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
 		# if(only_play or self.play):
-		if(p < 0.1 and not only_play):
-			action = random.randint(0,NUMBER_OF_ACTIONS-1)
-		else:
+		# if(p < 0.1 and not only_play):
+		# 	action = random.randint(0,NUMBER_OF_ACTIONS-1)
+		# else:
+		if(only_play):
 			action = predicted_action
 		# if((not self.val or p < 0.15) and not only_play):
 		# 	action = (random.randint(0,NUMBER_OF_ACTIONS-1))
