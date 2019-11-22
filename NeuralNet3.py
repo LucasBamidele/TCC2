@@ -3,12 +3,13 @@ from keras.layers.core import Dense, Activation, Dropout, Flatten
 from keras.layers import Input, Dense
 from keras import backend as K
 from keras.optimizers import Adam
+from NoisyDense import NoisyDense
 
-import numba as nb
+# import numba as nb
 
-HIDDEN_SIZE_ACTOR = 512
+HIDDEN_SIZE_ACTOR = 60
 HIDDEN_SIZE_CRITIC = 256
-LR = 6e-8
+LR = 5e-4
 LR2 = 1e-4
 LOSS_CLIPPING = 0.2
 ENTROPY_LOSS = -1e-4
@@ -17,26 +18,31 @@ NUM_LAYERS = 2
 NUM_INPUTS = 11
 NUM_OUTPUTS = 9 
 
-@nb.jit
-def exponential_average(old, new, b1):
-    return old * b1 + (1-b1) * new
+# @nb.jit
+# def exponential_average(old, new, b1):
+#     return old * b1 + (1-b1) * new
 
 
 def proximal_policy_optimization_loss(advantage, old_prediction, rewards, values):
 	def loss(y_true, y_pred):
 		# prob = abs(y_true * y_pred)
 		# old_prob = abs(y_true * old_prediction)
-		# r = prob/(old_prob + 1e-10)
-		newpolicy_probs = y_pred
-		r = K.exp(K.log(newpolicy_probs + 1e-10) - K.log(old_prediction + 1e-10))
+		# r = y_pred/(old_prediction + 1e-10)
+		# newpolicy_probs = y_pred
+		# r = K.exp(K.log(newpolicy_probs + 1e-10) - K.log(old_prediction + 1e-10))
 
-		actor_loss = -K.mean(K.minimum(r * advantage, K.clip(r, min_value=1 - LOSS_CLIPPING, max_value=1 + LOSS_CLIPPING) * advantage))
-		critic_loss = K.mean(K.square(rewards - values))
-		entropy = K.mean(-(newpolicy_probs * K.log((newpolicy_probs + 1e-10))))
+		# actor_loss = -K.mean(K.minimum(r * advantage, K.clip(r, min_value=1 - LOSS_CLIPPING, max_value=1 + LOSS_CLIPPING) * advantage))
+		# critic_loss = K.mean(K.square(rewards - values))
+		# entropy = K.mean(-(newpolicy_probs * K.log((newpolicy_probs + 1e-10))))
 		# crit_loss = K.pow(y_true - y_pred, 2)
 		# critic_loss = -K.mean(crit_loss)
-		myloss = C1*critic_loss + actor_loss + ENTROPY_LOSS * entropy 
-		return myloss
+		# myloss = actor_loss #+ ENTROPY_LOSS * entropy + #C1*critic_loss
+		prob = K.sum(y_true * y_pred)
+		old_prob = K.sum(y_true * old_prediction)
+		r = prob/(old_prob + 1e-10)
+
+		return -K.log(prob + 1e-10) * K.mean(K.minimum(r * advantage, K.clip(r, min_value=0.8, max_value=1.2) * advantage))
+		# return myloss
 	return loss
 
 def Actor(num_inputs, num_outputs, hidden_layer, load=''):
@@ -46,11 +52,14 @@ def Actor(num_inputs, num_outputs, hidden_layer, load=''):
 	values = Input(shape=(1,))
 	old_prediction = Input(shape=(NUM_OUTPUTS,))
 
-	x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(state_input)
+	x = Dense(HIDDEN_SIZE_ACTOR, activation='tanh', kernel_initializer='random_uniform')(state_input)
+	x = Dropout(0.2)(x)
 	# x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(x)
-	x = Dense(HIDDEN_SIZE_ACTOR, activation='relu')(x)
-	out_actions = Dense(NUM_OUTPUTS, activation='softmax', name='output')(x)
-
+	# x = Dropout(0.2)
+	x = Dense(HIDDEN_SIZE_ACTOR, activation='tanh',kernel_initializer='random_uniform')(x)
+	x = Dropout(0.2)(x)
+	# out_actions = Dense(NUM_OUTPUTS, activation='softmax', name='output')(x)
+	out_actions = NoisyDense(NUM_OUTPUTS, activation='softmax', sigma_init=0.02, name='output')(x)
 	model = Model(inputs=[state_input, advantage, old_prediction, rewards, values], outputs=[out_actions])
 	model.compile(optimizer=Adam(lr=LR),
 	              loss=[proximal_policy_optimization_loss(

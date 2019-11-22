@@ -17,7 +17,7 @@ class Ball(PhysicsBall):
         self.body = world.CreateDynamicBody(
             fixtures=b2FixtureDef(shape=b2CircleShape(radius=2.135), 
                                   friction=0.1,
-                                  restitution=0.1),
+                                  restitution=0.2),#0.1),
             bullet=True,
             position=position)
         self.body.userData = {'obj': self}

@@ -120,8 +120,9 @@ class Field(PygameFramework):
             self.robots_opponents[x].body.position = (random_x,random_y)
             self.robots_opponents[x].body.angle = angle #math.pi/2
 
-
-        self.ball.body.position = (0,0)
+        random_x = random.randint(-10,10)
+        random_y = random.randint(-10,10)
+        self.ball.body.position = (random_x,random_y)
         self.ball.body.linearVelocity = (0,0)
 
 
@@ -167,6 +168,8 @@ class Field(PygameFramework):
     def Step(self, settings):
         self.update_speeds()
         self.update_phisics(settings)
+        super(Field, self).Step(settings)
+        self.controller.times+=1
         if(not only_play):
             self.compute_learning()
         if(only_play and self.ball.body.position[0] >= BALL_MAX_X):
@@ -175,7 +178,6 @@ class Field(PygameFramework):
         if(self.controller.restart):
             self.controller.restart = False
             self.restart()
-        super(Field, self).Step(settings)
 
         for x in range(self.num_allies):
             self.robots_allies[x].update_colors()
