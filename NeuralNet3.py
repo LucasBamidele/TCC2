@@ -7,12 +7,12 @@ from NoisyDense import NoisyDense
 
 # import numba as nb
 
-HIDDEN_SIZE_ACTOR = 60
+HIDDEN_SIZE_ACTOR = 50
 HIDDEN_SIZE_CRITIC = 256
 LR = 5e-4
 LR2 = 1e-4
 LOSS_CLIPPING = 0.2
-ENTROPY_LOSS = -1e-4
+ENTROPY_LOSS = 1e-4
 C1 = 0.5
 NUM_LAYERS = 2
 NUM_INPUTS = 11
@@ -41,7 +41,7 @@ def proximal_policy_optimization_loss(advantage, old_prediction, rewards, values
 		old_prob = K.sum(y_true * old_prediction)
 		r = prob/(old_prob + 1e-10)
 
-		return -K.log(prob + 1e-10) * K.mean(K.minimum(r * advantage, K.clip(r, min_value=0.8, max_value=1.2) * advantage))
+		return K.log(prob + 1e-10)*ENTROPY_LOSS -K.mean(K.minimum(r * advantage, K.clip(r, min_value=0.8, max_value=1.2) * advantage))
 		# return myloss
 	return loss
 

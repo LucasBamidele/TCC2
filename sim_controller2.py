@@ -49,10 +49,10 @@ if(len(sys.argv) > 2):
 
 
 
-GOAL_REWARD = 100
+GOAL_REWARD = 1300
 ENEMY_GOAL_REWARD = -100
 STUCK_REWARD = -10
-HIT_REWARD = 20
+HIT_REWARD = 300
 TIMEOUT_REWARD = 0
 
 GAMMA = 0.95
@@ -102,14 +102,14 @@ NUM_FEATURES = NUMBER_BALL_FEATURES + FEATURE_PLAYER*NUMBER_OF_PLAYERS
 LIN_ACCEL_VEC = [i for i in range(-5,6)]
 ANG_ACCEL_VEC = [i for i in range(-2, 3)]
 
-MAX_FRAMES_GAME = 400
+MAX_FRAMES_GAME = 500
 BUFFER_SIZE = MAX_FRAMES_GAME
 MAX_ANGLE_FRONT = 0.62
 
 OBSERVE_TIMES = 200#1800#3600 # BUFFER #com 100 funcionou legal
 MAX_MEMORY_BALL = 60
 
-MAX_EPISODES = 3000
+MAX_EPISODES = 10
 
 # use_cuda = torch.cuda.is_available()
 # device   = torch.device("cuda" if use_cuda else "cpu")
@@ -127,7 +127,7 @@ MAX_DIST = 152
 TAU = 0.4
 if(p):
 	p = str(p)
-	file_name = 'ppo_stable'
+	file_name = 'mymodel_ppo3'
 	model_name = p + file_name + '.h5'
 	file_name_crit = p + 'crit' + file_name
 	model_name2 = file_name_crit + '.h5'
@@ -300,10 +300,10 @@ class SimController(object):
 
 		self.action = 0
 		if(only_play or load_model):
-			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name2)
+			# self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name2)
 			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, _dir + model_name)
 		else :
-			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, 'saved_models/Exp1/9999critmymodel_ppo3.h5')
+			self.critic = Critic(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE, '30000critmymodel_ppo3.h5')
 			self.actor = Actor(NUM_FEATURES, NUMBER_OF_ACTIONS, LAYER_SIZE)
 		self.reward_dict = {
 			'goal': GOAL_REWARD,
@@ -469,7 +469,7 @@ class SimController(object):
 		# print('diff direct', diff_direction)
 		# reward1 = 1/(0.05 + 0.01*diff_distance)
 		# print('reward1', reward1)
-		reward += 50/(0.1 + 0.01*diff_direction) + 100/(0.05 + 0.01*diff_distance)#/(0.1*self.times_since_restart)
+		reward += 5/(0.1 + 0.1*diff_direction) + 10/(0.05 + 0.01*diff_distance)#/(0.1*self.times_since_restart)
 		# print('reward',reward)
 		# reward +=reward1
 		goal_x = MAX_DIST/2
@@ -676,14 +676,14 @@ class SimController(object):
 		predicted_action = np.argmax(predicted_qval)
 		self.predicted_action = predicted_qval
 		# print('state',state.transpose())
-		p = random.random()
+		# p = random.random()
 		# action = np.random.choice(NUMBER_OF_ACTIONS, p=predicted_qval[0, :])
 		# if(only_play):
 			# action = predicted_action
-		if(self.decrease < p and not only_play):
-			action = (random.randint(0,NUMBER_OF_ACTIONS-1))
-		else :
-			action = predicted_action
+		# if(self.decrease < p and not only_play):
+		# 	action = (random.randint(0,NUMBER_OF_ACTIONS-1))
+		# else :
+		action = predicted_action
 		# print('pred_Values',self.critic.predict(state.transpose()))
 		self.action_matrix = np.zeros(NUMBER_OF_ACTIONS)
 		self.action_matrix[action] = 1
@@ -698,8 +698,8 @@ class SimController(object):
 		# a,b = 0,0
 		allies = [(a,b),(0,0),(0,0),(0,0),(0,0)]
 		enemies = [(0,0),(0,0),(0,0),(0,0),(0,0)]
-		if(self.decrease > 0.1):
-			self.decrease = self.episodes/(2*MAX_EPISODES)
+		# if(self.decrease > 0.1):
+		# 	self.decrease = self.episodes/(2*MAX_EPISODES)
 		return (allies+enemies)
 
 
