@@ -135,7 +135,7 @@ if(p):
 	model_name = p + file_name + '.h5'
 	file_name_crit = p + 'crit' + file_name
 	model_name2 = file_name_crit + '.h5'
-	_dir = 'saved_models/Exp3/'
+	_dir = 'saved_models/'
 else :
 	file_name = 'mymodel_ppo_1v1'
 	model_name = file_name + '.h5'
