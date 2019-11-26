@@ -110,8 +110,8 @@ class Field(PygameFramework):
 
     def restart(self):
         for x in range(self.num_allies):
-            random_x = random.randint(-40,-20)
-            random_y = random.randint(-20,20)
+            random_x = random.randint(-50,-30)
+            random_y = random.randint(-30,30)
             # angle = random.random()*2*math.pi
             angle = random.uniform(-math.pi/3, math.pi/3)
             if(angle < 0):

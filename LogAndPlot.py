@@ -21,7 +21,7 @@ def plotRewards(y, x=None, figname='default'):
 def main():
 	from scipy.ndimage.filters import gaussian_filter
 	import csv
-	filename = 'saved_models/Exp2/mymodel_ppo_1v1.csv'
+	filename = 'mymodel_ppo_1v1.csv'
 	rewards = []
 	with open(filename) as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=',')
@@ -33,7 +33,7 @@ def main():
 	# plt.legend(handles=[v1, v2])
 	plt.plot(rewards, color = '#b3d1ff')
 	plt.plot(saida_filtrada, color = 'C0')
-	plt.savefig('saved_models/testin1' + '.png')
+	plt.savefig('saved_models/Exp5/'+filename[:-4] + '.png')
 	plt.clf()
 
 if __name__ == '__main__':
