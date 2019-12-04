@@ -103,8 +103,8 @@ MAX_DIST = 152
 
 TAU = 0.4
 _dir = ''
-_dir = 'saved_models/Exp2/'
-file_name = 'mymodel_episodic_big_net'
+# _dir = 'saved_models/Exp2/'
+file_name = 'ddqn_mult_valid'
 model_name = file_name + '.h5'
 
 MIN_DELTA_NO_MOVEMENT = 0.5
@@ -491,7 +491,7 @@ class SimController(object):
 		# 		self.replay_memory.popleft()
 		if(self.episodes%50==0 and self.episodes > 50):
 			self.target_train()
-		self.mean_rewards.append(self.rew_sum)
+		self.mean_rewards.append(np.mean(self.latest_rewards))
 		self.rew_sum = 0
 		self.latest_rewards = []
 		print('saving and restarting...')

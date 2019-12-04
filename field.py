@@ -106,7 +106,7 @@ class Field(PygameFramework):
 
     def compute_learning(self):
         self.controller.compute(self.robots_allies, self.robots_opponents, self.ball)
-        # self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
+        self.controller2.compute(self.robots_opponents, self.robots_allies, self.ball)
 
     def restart(self):
         for x in range(self.num_allies):
@@ -180,6 +180,7 @@ class Field(PygameFramework):
             self.controller2.restart = True
             print('goall!!!!')
         if(self.controller.restart and self.controller2.restart):
+            print('aqui')
             self.controller.treatRestart()
             self.controller2.treatRestart()
             self.controller.restart = False
