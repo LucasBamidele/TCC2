@@ -116,6 +116,11 @@ class Field(PygameFramework):
             angle = random.uniform(-math.pi/3, math.pi/3)
             if(angle < 0):
                 angle += 2*math.pi
+            random_x = random.randint(-60,60)
+            random_y = random.randint(-30,30)
+            while(abs(random_x) < 10):
+                random_x = random.randint(-60,60)
+            angle = random.random()*2*math.pi
             self.robots_allies[x].body.position = (random_x,random_y)
             self.robots_allies[x].body.angle = angle #math.pi/2
         for x in range(self.num_opponents):
